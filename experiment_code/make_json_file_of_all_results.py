@@ -1,4 +1,3 @@
-#loads results for plotting in Jupyter notebook
 #from standard library
 import sys
 import json

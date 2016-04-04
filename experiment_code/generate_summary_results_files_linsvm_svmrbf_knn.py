@@ -1,5 +1,4 @@
 #from standard library
-import pdb
 import os
 import json
 import shelve
@@ -10,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix as confuse_mat
 from sklearn.metrics import recall_score
 
-# from me own compositions
+# from functions files written for these experiments
 from svm_rbf_test_utility_functions import load_from_mat
 from knn_test_functions import load_knn_data
 
