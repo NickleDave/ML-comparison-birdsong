@@ -261,6 +261,22 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['train_sample_total_duration'] = train_sample_total_duration
         shv['num_train_samples'] = num_train_samples
 
+        shv['linsvm_holdout_rnd_acc'] = linsvm_holdout_rnd_acc
+        shv['linsvm_holdout_rnd_acc_mn'] = np.mean(linsvm_holdout_rnd_acc,axis=0)
+        shv['linsvm_holdout_rnd_acc_std'] = np.std(linsvm_holdout_rnd_acc,axis=0)
+
+        shv['linsvm_test_rnd_acc'] = linsvm_test_rnd_acc
+        shv['linsvm_test_rnd_acc_mn'] = np.mean(linsvm_test_rnd_acc,axis=0)
+        shv['linsvm_test_rnd_acc_std'] = np.std(linsvm_test_rnd_acc,axis=0)
+
+        shv['linsvm_holdout_no_intro_rnd_acc'] = linsvm_holdout_no_intro_rnd_acc
+        shv['linsvm_holdout_no_intro_rnd_acc_mn'] = np.mean(linsvm_holdout_no_intro_rnd_acc,axis=0)
+        shv['linsvm_holdout_no_intro_rnd_acc_std'] = np.std(linsvm_holdout_no_intro_rnd_acc,axis=0)
+
+        shv['linsvm_test_no_intro_rnd_acc'] = linsvm_test_no_intro_rnd_acc
+        shv['linsvm_test_no_intro_rnd_acc_mn'] = np.mean(linsvm_test_no_intro_rnd_acc,axis=0)
+        shv['linsvm_test_no_intro_rnd_acc_std'] = np.std(linsvm_test_no_intro_rnd_acc,axis=0)
+
         shv['svm_Tach_holdout_rnd_acc'] = svm_Tach_holdout_rnd_acc
         shv['svm_Tach_holdout_rnd_acc_mn'] = np.mean(svm_Tach_holdout_rnd_acc,axis=0)
         shv['svm_Tach_holdout_rnd_acc_std'] = np.std(svm_Tach_holdout_rnd_acc,axis=0)
