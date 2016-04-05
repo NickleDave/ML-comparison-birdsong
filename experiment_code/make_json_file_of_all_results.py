@@ -118,11 +118,16 @@ for bird_ID in BIRD_NAMES_DICT.values():
 #            'linsvm_holdout_no_intro_avg_acc_std':shv['linsvm_holdout_no_intro_avg_acc_std'],
 #            'linsvm_holdout_no_intro_cm_arr':shv['linsvm_holdout_no_intro_cm_arr'],
 
+            'linsvm_test_rnd_acc_flat':shv['linsvm_test_rnd_acc_flat'],
+            'num_train_samples_flat':shv['num_train_samples_flat'],
+            'linsvm_test_rnd_acc_by_sample_mn':shv['linsvm_test_rnd_acc_by_sample_mn'],
+            'linsvm_test_rnd_acc_by_sample_std':shv['linsvm_test_rnd_acc_by_sample_std'],
+
             'linsvm_test_no_intro_acc_by_label':shv['linsvm_test_no_intro_acc_by_label'],
             'linsvm_test_no_intro_avg_acc':shv['linsvm_test_no_intro_avg_acc'],
             'linsvm_test_no_intro_avg_acc_mn':shv['linsvm_test_no_intro_avg_acc_mn'],
             'linsvm_test_no_intro_avg_acc_std':shv['linsvm_test_no_intro_avg_acc_std'],
-#            'linsvm_test_no_intro_cm_arr':shv['linsvm_test_no_intro_cm_arr'],
+            'linsvm_test_no_intro_cm_arr':shv['linsvm_test_no_intro_cm_arr'],
             
             'svm_Tach_holdout_acc_by_label':shv['svm_Tach_holdout_acc_by_label'],
             'svm_Tach_holdout_avg_acc':shv['svm_Tach_holdout_avg_acc'],

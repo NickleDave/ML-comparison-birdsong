@@ -1,4 +1,5 @@
 #from standard library
+import pdb
 import os
 import json
 import shelve
@@ -160,12 +161,13 @@ for bird_ID, bird_data in data_by_bird.items():
                 holdout_labels_no_intro = filter_labels(holdout_labels,non_intro_note_labelset) #removes intro notes
                 
                 # put Rand accuracies in summary data matrices
-                linsvm_holdout_rnd_acc[row_ind,col_ind] = shv['linsvm_holdout_acc'][0] # liblinear Python API returns 3-element tuple, 1st element is acc.
-                linsvm_test_rnd_acc[row_ind,col_ind] = shv['linsvm_test_acc'][0] # liblinear Python API returns 3-element tuple, 1st element is acc.
+                # below, [0] at end of line because liblinear Python API returns 3-element tuple, 1st element is acc.
+                linsvm_holdout_rnd_acc[row_ind,col_ind] = shv['linsvm_holdout_acc'][0]  
+                linsvm_test_rnd_acc[row_ind,col_ind] = shv['linsvm_test_acc'][0]
                 linsvm_holdout_no_intro_rnd_acc[row_ind,col_ind] = \
-                    shv['linsvm_holdout_no_intro_acc'][0] # liblinear Python API returns 3-element tuple, 1st element is acc.
+                    shv['linsvm_holdout_no_intro_acc'][0]
                 linsvm_test_no_intro_rnd_acc[row_ind,col_ind] = \
-                    shv['linsvm_test_no_intro_acc'][0] # liblinear Python API returns 3-element tuple, 1st element is acc.
+                    shv['linsvm_test_no_intro_acc'][0]
                 svm_holdout_rnd_acc[row_ind,col_ind] = shv['svm_holdout_score'] * 100
                 svm_test_rnd_acc[row_ind,col_ind] = shv['svm_test_score'] * 100
                 svm_Tach_holdout_rnd_acc[row_ind,col_ind] = shv['svm_Tach_holdout_score'] * 100
@@ -275,6 +277,19 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['linsvm_test_no_intro_rnd_acc'] = linsvm_test_no_intro_rnd_acc
         shv['linsvm_test_no_intro_rnd_acc_mn'] = np.mean(linsvm_test_no_intro_rnd_acc,axis=0)
         shv['linsvm_test_no_intro_rnd_acc_std'] = np.std(linsvm_test_no_intro_rnd_acc,axis=0)
+
+        #for linear svm only, bin accuracy by number of samples, then get mean and std. dev.
+        #only take accuracy from test set, to compare directly with Tachibana
+        linsvm_test_rnd_acc_flat = linsvm_test_rnd_acc.flatten()
+        num_train_samples_flat = num_train_samples.flatten()
+        BINS = range(0,3000,500)
+        indices = np.digitize(num_train_samples_flat,BINS)
+        bin_means = [linsvm_test_rnd_acc_flat[indices == i].mean() for i in range(1, len(BINS))]
+        bin_std = [linsvm_test_rnd_acc_flat[indices == i].std() for i in range(1, len(BINS))]
+        shv['linsvm_test_rnd_acc_flat'] = linsvm_test_rnd_acc_flat
+        shv['num_train_samples_flat'] = num_train_samples_flat
+        shv['linsvm_test_rnd_acc_by_sample_mn'] = bin_means
+        shv['linsvm_test_rnd_acc_by_sample_std'] = bin_std
 
         shv['svm_Tach_holdout_rnd_acc'] = svm_Tach_holdout_rnd_acc
         shv['svm_Tach_holdout_rnd_acc_mn'] = np.mean(svm_Tach_holdout_rnd_acc,axis=0)
