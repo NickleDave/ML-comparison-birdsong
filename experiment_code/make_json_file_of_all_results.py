@@ -120,6 +120,7 @@ for bird_ID in BIRD_NAMES_DICT.values():
 
             'linsvm_test_rnd_acc_flat':shv['linsvm_test_rnd_acc_flat'],
             'num_train_samples_flat':shv['num_train_samples_flat'],
+            'linsvm_train_sample_bins':shv['linsvm_train_sample_bins'],
             'linsvm_test_rnd_acc_by_sample_mn':shv['linsvm_test_rnd_acc_by_sample_mn'],
             'linsvm_test_rnd_acc_by_sample_std':shv['linsvm_test_rnd_acc_by_sample_std'],
 

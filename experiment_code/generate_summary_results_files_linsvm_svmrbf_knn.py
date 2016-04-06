@@ -282,12 +282,15 @@ for bird_ID, bird_data in data_by_bird.items():
         #only take accuracy from test set, to compare directly with Tachibana
         linsvm_test_rnd_acc_flat = linsvm_test_rnd_acc.flatten()
         num_train_samples_flat = num_train_samples.flatten()
-        BINS = range(0,3000,500)
+        max_n_samples = np.max(num_train_samples_flat)
+        max_n_rounded_to_nearest_1k = np.ceil(max_n_samples/1000).astype(int) * 1000
+        BINS = list(range(0,max_n_rounded_to_nearest_1k,500))
         indices = np.digitize(num_train_samples_flat,BINS)
         bin_means = [linsvm_test_rnd_acc_flat[indices == i].mean() for i in range(1, len(BINS))]
         bin_std = [linsvm_test_rnd_acc_flat[indices == i].std() for i in range(1, len(BINS))]
         shv['linsvm_test_rnd_acc_flat'] = linsvm_test_rnd_acc_flat
         shv['num_train_samples_flat'] = num_train_samples_flat
+        shv['linsvm_train_sample_bins'] = BINS
         shv['linsvm_test_rnd_acc_by_sample_mn'] = bin_means
         shv['linsvm_test_rnd_acc_by_sample_std'] = bin_std
 
