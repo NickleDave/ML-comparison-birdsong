@@ -50,9 +50,9 @@ def get_acc_by_label(labels,pred_labels,labelset):
     return acc_by_label,avg_acc
 
 #constants
-DATA_DIR = '../data_for_testing/'
-RESULTS_DIR = '../linsvm_svmrbf_knn_results/'
-JSON_FNAME = '../data_for_testing/data_by_bird.JSON'
+DATA_DIR = './data_for_testing/'
+RESULTS_DIR = './linsvm_svmrbf_knn_results/'
+JSON_FNAME = './data_for_testing/data_by_bird.JSON'
 SHELVE_BASE_FNAME = 'linsvm_svmrbf_knn_results_'
 RESULTS_SHV_BASE_FNAME = '_linsvm_svmrbf_knn_summary_results'
 
@@ -183,7 +183,7 @@ for bird_ID, bird_data in data_by_bird.items():
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,linsvm_holdout_pred_labels,labelset)
                 linsvm_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
-                linsvm_holdout_confuse_mat = confuse_mat(holdout_labels,linsvm_holdout_pred_labels)
+                linsvm_holdout_confuse_mat = confuse_mat(holdout_labels,linsvm_holdout_pred_labels,labels=labelset)
                 linsvm_holdout_cm_arr[row_ind,col_ind]  = linsvm_holdout_confuse_mat
                 
                 linsvm_test_pred_labels = shv['linsvm_test_pred_labels']
@@ -192,7 +192,7 @@ for bird_ID, bird_data in data_by_bird.items():
                 acc_by_label,avg_acc = get_acc_by_label(svm_test_labels,linsvm_test_pred_labels,labelset)
                 linsvm_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                linsvm_test_confuse_mat = confuse_mat(svm_test_labels,linsvm_test_pred_labels)
+                linsvm_test_confuse_mat = confuse_mat(svm_test_labels,linsvm_test_pred_labels,labels=labelset)
                 linsvm_test_cm_arr[row_ind,col_ind] = linsvm_test_confuse_mat
 
                 linsvm_holdout_no_intro_pred_labels = shv['linsvm_holdout_no_intro_pred_labels']
@@ -201,7 +201,9 @@ for bird_ID, bird_data in data_by_bird.items():
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels_no_intro,linsvm_holdout_no_intro_pred_labels,non_intro_note_labelset)
                 linsvm_holdout_no_intro_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_holdout_no_intro_avg_acc[row_ind,col_ind] = avg_acc * 100
-                linsvm_holdout_no_intro_confuse_mat = confuse_mat(holdout_labels_no_intro,linsvm_holdout_no_intro_pred_labels)
+                linsvm_holdout_no_intro_confuse_mat = confuse_mat(holdout_labels_no_intro,
+                                                                linsvm_holdout_no_intro_pred_labels,
+                                                                labels=non_intro_note_labelset)
                 linsvm_holdout_no_intro_cm_arr[row_ind,col_ind]  = linsvm_holdout_no_intro_confuse_mat
                 
                 linsvm_test_no_intro_pred_labels = shv['linsvm_test_no_intro_pred_labels']
@@ -210,49 +212,51 @@ for bird_ID, bird_data in data_by_bird.items():
                 acc_by_label,avg_acc = get_acc_by_label(svm_test_labels_no_intro,linsvm_test_no_intro_pred_labels,non_intro_note_labelset)
                 linsvm_test_no_intro_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_test_no_intro_avg_acc[row_ind,col_ind] = avg_acc * 100
-                linsvm_test_no_intro_confuse_mat = confuse_mat(svm_test_labels_no_intro,linsvm_test_no_intro_pred_labels)
+                linsvm_test_no_intro_confuse_mat = confuse_mat(svm_test_labels_no_intro,
+                                                            linsvm_test_no_intro_pred_labels,
+                                                            labels=non_intro_note_labelset)
                 linsvm_test_no_intro_cm_arr[row_ind,col_ind] = linsvm_test_no_intro_confuse_mat
 
                 svm_Tach_holdout_pred_labels = shv['svm_Tach_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,svm_Tach_holdout_pred_labels,labelset)
                 svm_Tach_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 svm_Tach_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
-                svm_Tach_holdout_confuse_mat = confuse_mat(holdout_labels,svm_Tach_holdout_pred_labels)
+                svm_Tach_holdout_confuse_mat = confuse_mat(holdout_labels,svm_Tach_holdout_pred_labels,labels=labelset)
                 svm_Tach_holdout_cm_arr[row_ind,col_ind]  = svm_Tach_holdout_confuse_mat
 
                 svm_Tach_test_pred_labels = shv['svm_Tach_test_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(svm_test_labels,svm_Tach_test_pred_labels,labelset)
                 svm_Tach_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 svm_Tach_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                svm_Tach_test_confuse_mat = confuse_mat(svm_test_labels,svm_Tach_test_pred_labels)
+                svm_Tach_test_confuse_mat = confuse_mat(svm_test_labels,svm_Tach_test_pred_labels,labels=labelset)
                 svm_Tach_test_cm_arr[row_ind,col_ind] = svm_Tach_test_confuse_mat
 
                 svm_holdout_pred_labels = shv['svm_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,svm_holdout_pred_labels,labelset)
                 svm_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 svm_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
-                svm_holdout_confuse_mat = confuse_mat(holdout_labels,svm_holdout_pred_labels)
+                svm_holdout_confuse_mat = confuse_mat(holdout_labels,svm_holdout_pred_labels,labels=labelset)
                 svm_holdout_cm_arr[row_ind,col_ind]  = svm_holdout_confuse_mat
                 
                 svm_test_pred_labels = shv['svm_test_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(svm_test_labels,svm_test_pred_labels,labelset)
                 svm_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 svm_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                svm_test_confuse_mat = confuse_mat(svm_test_labels,svm_test_pred_labels)
+                svm_test_confuse_mat = confuse_mat(svm_test_labels,svm_test_pred_labels,labels=labelset)
                 svm_test_cm_arr[row_ind,col_ind] = svm_test_confuse_mat
                                 
                 knn_holdout_pred_labels = shv['knn_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,knn_holdout_pred_labels,labelset)
                 knn_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 knn_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
-                knn_holdout_confuse_mat = confuse_mat(holdout_labels,knn_holdout_pred_labels)
+                knn_holdout_confuse_mat = confuse_mat(holdout_labels,knn_holdout_pred_labels,labels=labelset)
                 knn_holdout_cm_arr[row_ind,col_ind] = knn_holdout_confuse_mat
                                 
                 knn_test_pred_labels = shv['knn_test_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(knn_test_labels,knn_test_pred_labels,labelset)
                 knn_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 knn_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                knn_test_confuse_mat = confuse_mat(knn_test_labels,knn_test_pred_labels)
+                knn_test_confuse_mat = confuse_mat(knn_test_labels,knn_test_pred_labels,labels=labelset)
                 knn_test_cm_arr[row_ind,col_ind] = knn_test_confuse_mat
             shv.close()
 
@@ -261,6 +265,8 @@ for bird_ID, bird_data in data_by_bird.items():
     with shelve.open(results_fname) as shv:
         shv['train_sample_total_duration'] = train_sample_total_duration
         shv['num_train_samples'] = num_train_samples
+        shv['labelset'] = labelset
+        shv['non_intro_note_labelset'] = non_intro_note_labelset
 
         shv['linsvm_holdout_rnd_acc'] = linsvm_holdout_rnd_acc
         shv['linsvm_holdout_rnd_acc_mn'] = np.mean(linsvm_holdout_rnd_acc,axis=0)

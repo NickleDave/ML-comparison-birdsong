@@ -38,9 +38,9 @@ def convert_results_dict_to_jsonifiable(dict_in):
     return dict_in
 
 #constants    
-DATA_DIR = '../data_for_testing/'
-JSON_FNAME = '../data_for_testing/data_by_bird.JSON'
-RESULTS_DIR = '../linsvm_svmrbf_knn_results/'
+DATA_DIR = './data_for_testing/'
+JSON_FNAME = './data_for_testing/data_by_bird.JSON'
+RESULTS_DIR = './linsvm_svmrbf_knn_results/'
 SUMMARY_SHV_BASE_FNAME = '_linsvm_svmrbf_knn_summary_results'
 
 BIRD_NAMES_DICT = {
@@ -67,6 +67,8 @@ for bird_ID in BIRD_NAMES_DICT.values():
     with shelve.open(results_fname) as shv:
         results_dict[bird_ID] = {
             'num_train_samples':shv['num_train_samples'],
+            'labelset':shv['labelset'],
+            'non_intro_note_labelset':shv['non_intro_note_labelset'],
             
 #            'svm_Tach_holdout_rnd_acc':shv['svm_Tach_holdout_rnd_acc'],
 #            'svm_Tach_holdout_rnd_acc_mn':shv['svm_Tach_holdout_rnd_acc_mn'],
