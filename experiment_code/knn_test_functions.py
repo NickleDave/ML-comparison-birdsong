@@ -70,19 +70,15 @@ def find_best_k(train_samples,train_labels,holdout_samples,holdout_labels):
     """
 
     # test loop
-    replicates = range(0,10)
     num_nabes_list = range(1,10,1)
-    shape_tuple = (len(num_nabes_list),len(replicates),)
-    arr_scores = np.empty(shape_tuple)
-    for row_id, num_nabes in enumerate(num_nabes_list):
+    scores = np.empty((10,))
+    for ind, num_nabes in enumerate(num_nabes_list):
         clf = neighbors.KNeighborsClassifier(num_nabes,'distance')
-        for replicate in replicates:
-            clf.fit(train_samples,train_labels)
-            arr_scores[row_id,replicate] = clf.score(holdout_samples,holdout_labels)
-    mn_scores = np.mean(arr_scores,axis=1)
-    k = num_nabes_list[mn_scores.argmax()] #argmax returns index of max val
-    print("best k was {} with accuracy of {}".format(k,np.max(mn_scores)))
-    return mn_scores, k
+        clf.fit(train_samples,train_labels)
+        scores[ind] = clf.score(holdout_samples,holdout_labels)
+    k = num_nabes_list[scores.argmax()] #argmax returns index of max val
+    print("best k was {} with accuracy of {}".format(k,np.max(scores)))
+    return scores, k
 
 def knn_test(train_fname,test_fname,K,labelset):
     """knn_test(train_fname,test_fname,K,labelset)
