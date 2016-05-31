@@ -39,8 +39,6 @@ def load_knn_data(data_fname,labelset):
     samples = samples[samples_to_keep,:]
     samples = stats.zscore(samples)
     song_IDs = ftr_file['song_IDs'].flatten()[samples_to_keep]
-    
-
     return samples, labels, song_IDs
 
 def find_best_k(train_samples,train_labels,holdout_samples,holdout_labels):
@@ -71,7 +69,7 @@ def find_best_k(train_samples,train_labels,holdout_samples,holdout_labels):
 
     # test loop
     num_nabes_list = range(1,10,1)
-    scores = np.empty((10,))
+    scores = np.empty((9,))
     for ind, num_nabes in enumerate(num_nabes_list):
         clf = neighbors.KNeighborsClassifier(num_nabes,'distance')
         clf.fit(train_samples,train_labels)

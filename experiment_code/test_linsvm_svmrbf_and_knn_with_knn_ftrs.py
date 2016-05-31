@@ -16,15 +16,15 @@ sys.path.append("C:/Program Files/liblinear-2.01/python")
 from liblinearutil import *
 
 #from functions written just for these experiments
-from liblinear_test_utility_functions import filter_samples,scale_data,array_to_dictlist,remove_samples_by_label,dictlist_to_array
-from svm_rbf_test_utility_functions import load_from_mat,filter_samples,grid_search,train_test_song_split
+from liblinear_test_utility_functions import scale_data,array_to_dictlist,remove_samples_by_label,dictlist_to_array
+from svm_rbf_test_utility_functions import filter_samples,grid_search,train_test_song_split
 from knn_test_functions import load_knn_data, find_best_k
 
 #constants
 DATA_DIR = './data_for_testing/'
-TARGET_RESULTS_DIR = './linsvm_svmrbf_knn_same_ftrs_results/'
+TARGET_RESULTS_DIR = './linsvm_svmrbf_knn_with_knn_ftr_results/'
 JSON_FNAME = './data_for_testing/data_by_bird.JSON'
-RESULTS_SHELVE_BASE_FNAME = 'test_same_ftr_results_'
+RESULTS_SHELVE_BASE_FNAME = 'test_knn_ftr_results_'
 TRAIN_PARAMS = parameter('-s 1 -c 1 -q') # for liblinear library function
 DURATION_COLUMN_INDEX = 0 # after removing other Tachibana features (spectrograms), first index (0) is duration
 
@@ -46,21 +46,16 @@ scaler_no_intro = StandardScaler()
 for birdID, bird_data in data_by_bird.items():
     print("analyzing: " + birdID)
 
-    train_fname = os.path.join(DATA_DIR + bird_data['svm_train_feat'])
-    test_fname = os.path.join(DATA_DIR + bird_data['svm_test_feat'])
+    train_fname = os.path.join(DATA_DIR + bird_data['knn_train_feat'])
+    test_fname = os.path.join(DATA_DIR + bird_data['knn_test_feat'])
     labelset = list(bird_data['labelset'])
     labelset = [ord(label) for label in labelset]
     intro_labels = list(bird_data['intro labels'])
     intro_labels = [ord(label) for label in intro_labels] 
     
-    train_samples,train_labels,train_song_IDs = load_from_mat(train_fname)
-    train_samples,train_labels,train_song_IDs = filter_samples(train_samples,train_labels,labelset,train_song_IDs)
-    train_samples = train_samples[:,-24:-4] # just acoustic features from Tachibana + duration and no. of zero crossings
-    test_samples,test_labels,test_song_IDs = load_from_mat(test_fname)
-    test_samples,test_labels = filter_samples(test_samples,test_labels,labelset,test_song_IDs)[0:2] # don't need song_IDs for test set
+    train_samples,train_labels,train_song_IDs = load_knn_data(train_fname,labelset)
+    test_samples,test_labels = load_knn_data(test_fname,labelset)[0:2]
     linsvm_test_labels = test_labels.tolist() # liblinear library functions take a list of labels, not an array
-    test_samples = test_samples[:,-24:-4] # just acoustic features from Tachibana + duration and no. of zero crossings
-
 
     for ind, num_songs in enumerate(NUM_SONGS_TO_TEST):
         print("Testing accuracy for training set composed of " + str(num_songs) + " songs")
@@ -131,7 +126,7 @@ for birdID, bird_data in data_by_bird.items():
                 predict(linsvm_test_labels_no_intro,linsvm_test_samples_no_intro,model)
             
             ### test k-Nearest neighbors ###
-            print(" 'Training' k-NN model using acoustic params + adjacent syllable features.")
+            print(" 'Training' k-NN model.")
             print(" finding best k")
             k = find_best_k(train_samples_subset_scaled,train_labels_subset,holdout_samples_scaled,holdout_labels)[1]
             # ^ [1] because I don't want mn_scores, just k
