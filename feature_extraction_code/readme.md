@@ -1,12 +1,13 @@
 #feature extraction code
 
-This folder consists of Matlab and Python code used to extract features for use with machine learning algorithms as described in _Comparison of machine learning algorithms applied to birdsong element classification_. The code is applied to audio files produced by custom Labview software. 
+This folder consists of Matlab and Python code used to extract features for use with machine learning algorithms as described in _"Comparison of machine learning algorithms applied to birdsong element classification"_. The code is applied to audio files produced by custom Labview software. 
 * The actual feature files created using this code are here: [feature files](https://drive.google.com/folderview?id=0B0BKW2mh0ySnY3NDcjZCM1dLS1k&usp=drive_web)
 * Example audio files are found here: ["example day of song"](https://drive.google.com/folderview?id=0B0BKW2mh0ySnYWhkYmV6WnNFQ1U&usp=sharing)
 * As explained in the paper, the experiments sought to compare the support vector machine and k-Nearest Neighbor algorithms.
  * The example audio files are from the day of song from one bird used to train classifiers for that bird
- * To train SVM classifiers, the file used was: gy6or6_feature_file_from_03-24-12_generated_02-14-16_23-05.mat
- * To train k-NN classifiers for this bird, the file used was: gy6or6_ftr_cell_03242012_generated_12152015.mat
+  * To train SVM classifiers, the file used was: gy6or6_feature_file_from_03-24-12_generated_02-14-16_23-05.mat
+  * To train k-NN classifiers for this bird, the file used was: gy6or6_ftr_cell_03242012_generated_12152015.mat
+Instructions below describe how to reproduce these files.
  
 ## svm
 ### features used for support vector machine experiments
