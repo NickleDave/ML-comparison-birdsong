@@ -155,13 +155,20 @@ def train_test_song_split(samples,labels,song_IDs,train_size,test_size = 0.2):
             'Number of training songs, %d, plus number of test songs, %d,'
             'is greater than the total number of songs, %d' % (n_train, n_test, n_songs))
 
-    np.random.shuffle(uniq_song_IDs) # shuffles array in place, no need to assign to a different variable
-    train_song_IDs = uniq_song_IDs[0:n_train]
-    test_song_IDs = uniq_song_IDs[n_train:n_train + n_test]
-    train_song_sample_IDs = np.where(np.in1d(song_IDs,train_song_IDs))[0] #[0] because where returns tuple
-    train_samples = samples[train_song_sample_IDs,:]
-    train_labels = labels[train_song_sample_IDs]
-    test_song_sample_IDs = np.where(np.in1d(song_IDs,test_song_IDs))[0] #[0] because where returns tuple
-    test_samples = samples[test_song_sample_IDs,:]
-    test_labels = labels[test_song_sample_IDs]
-    return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
+    # loop until there are at least two examples of each label in the training set
+    # this is necessary for StratifiedShuffleSplit to work in the Grid Search function
+    while 1:
+        np.random.shuffle(uniq_song_IDs) # shuffles array in place, no need to assign to a different variable
+        train_song_IDs = uniq_song_IDs[0:n_train]
+        test_song_IDs = uniq_song_IDs[n_train:n_train + n_test]
+        train_song_sample_IDs = np.where(np.in1d(song_IDs,train_song_IDs))[0] #[0] because where returns tuple
+        train_samples = samples[train_song_sample_IDs,:]
+        train_labels = labels[train_song_sample_IDs]
+        test_song_sample_IDs = np.where(np.in1d(song_IDs,test_song_IDs))[0] #[0] because where returns tuple
+        test_samples = samples[test_song_sample_IDs,:]
+        test_labels = labels[test_song_sample_IDs]
+        inds = np.unique(train_labels,return_inverse=True)[1] # indices of unique labels, don't need unique labels to bin and count
+        if np.min(np.bincount(inds))<2:
+            continue
+        else:
+            return train_samples, train_labels, test_samples, test_labels,train_song_sample_IDs,test_song_sample_IDs
