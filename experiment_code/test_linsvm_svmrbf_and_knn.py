@@ -22,7 +22,7 @@ from knn_test_functions import load_knn_data, find_best_k
 
 #constants
 DATA_DIR = './data_for_testing/'
-TARGET_RESULTS_DIR = './linsvm_svmrbf_knn_results_test_script/'
+TARGET_RESULTS_DIR = './linsvm_svmrbf_knn_results/'
 JSON_FNAME = './data_for_testing/data_by_bird.JSON'
 RESULTS_SHELVE_BASE_FNAME = 'linsvm_svmrbf_knn_results_'
 TRAIN_PARAMS = parameter('-s 1 -c 1 -q') # for liblinear library function
