@@ -23,10 +23,8 @@ Once you have met the above requirements, navigate to the "experiments" director
  `>python test_linsvm_svmrbf_and_knn.py`
 
 ## Analyzing the results
-When the main script finishes running, it will have created databases (using the Python "shelve" module) in the TARGET_RESULTS_DIR defined in the script. Each database contains results from one replicate for one condition. A separate script iterates through these database files and creates a summary file. Simply run it from the Anaconda prompt:
-
+When the main script finishes running, it will have created databases (using the Python "shelve" module) in the TARGET_RESULTS_DIR defined in the script. Each database contains results from one replicate for one condition. A separate script iterates through these database files and creates a summary file. Simply run it from the Anaconda prompt:  
 `>python generate_summary_results_files_linsvm_svmrbf_knn.py`
 
-I generated figures from results with an iPython notebook, that can be found in the [figure_code directory](https://github.com/NickleDave/ML-comparison-birdsong/tree/master/figure_code) of this repository. The .ipynb in that directory loads results encoded in JSON format. This experiment_code directory also contains the script to convert from the summary file format to JSON. Again make sure the constants in the script are defined appropriately, then run from Anaconda prompt:
-
+I generated figures from results with an iPython notebook, that can be found in the [figure_code directory](https://github.com/NickleDave/ML-comparison-birdsong/tree/master/figure_code) of this repository. The .ipynb in that directory loads results encoded in JSON format. This experiment_code directory also contains the script to convert from the summary file format to JSON. Again make sure the constants in the script are defined appropriately, then run from Anaconda prompt:  
 `>python make_json_file_of_all_results.py`
