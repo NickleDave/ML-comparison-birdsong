@@ -16,8 +16,8 @@ sys.path.append("C:/Program Files/liblinear-2.01/python")
 from liblinearutil import *
 
 #from functions written just for these experiments
-from liblinear_test_utility_functions import scale_data,array_to_dictlist,remove_samples_by_label,dictlist_to_array
-from svm_rbf_test_utility_functions import filter_samples,grid_search,train_test_song_split
+from liblinear_test_utility_functions import filter_samples,scale_data,array_to_dictlist,remove_samples_by_label,dictlist_to_array
+from svm_rbf_test_utility_functions import load_from_mat,filter_samples,grid_search,train_test_song_split
 from knn_test_functions import load_knn_data, find_best_k
 
 #constants
@@ -26,7 +26,7 @@ TARGET_RESULTS_DIR = './linsvm_svmrbf_knn_with_knn_ftr_results/'
 JSON_FNAME = './data_for_testing/data_by_bird.JSON'
 RESULTS_SHELVE_BASE_FNAME = 'test_knn_ftr_results_'
 TRAIN_PARAMS = parameter('-s 1 -c 1 -q') # for liblinear library function
-DURATION_COLUMN_INDEX = 0 # after removing other Tachibana features (spectrograms), first index (0) is duration
+DURATION_COLUMN_INDEX = 0 # first index (0) in knn "feature_cell" is duration
 
 ### load JSON file that contains filenames of training/testing data
 ### and names of labels for samples, i.e., birdsong syllable names
@@ -46,13 +46,18 @@ scaler_no_intro = StandardScaler()
 for birdID, bird_data in data_by_bird.items():
     print("analyzing: " + birdID)
 
+    #<sh*tty hack>
+    if birdID != 'bl26lb16':
+        continue
+    #</sh*tty hack>
+
     train_fname = os.path.join(DATA_DIR + bird_data['knn_train_feat'])
     test_fname = os.path.join(DATA_DIR + bird_data['knn_test_feat'])
     labelset = list(bird_data['labelset'])
     labelset = [ord(label) for label in labelset]
     intro_labels = list(bird_data['intro labels'])
     intro_labels = [ord(label) for label in intro_labels] 
-    
+ 
     train_samples,train_labels,train_song_IDs = load_knn_data(train_fname,labelset)
     test_samples,test_labels = load_knn_data(test_fname,labelset)[0:2]
     linsvm_test_labels = test_labels.tolist() # liblinear library functions take a list of labels, not an array
@@ -126,7 +131,7 @@ for birdID, bird_data in data_by_bird.items():
                 predict(linsvm_test_labels_no_intro,linsvm_test_samples_no_intro,model)
             
             ### test k-Nearest neighbors ###
-            print(" 'Training' k-NN model.")
+            print(" 'Training' k-NN model using acoustic params + adjacent syllable features.")
             print(" finding best k")
             k = find_best_k(train_samples_subset_scaled,train_labels_subset,holdout_samples_scaled,holdout_labels)[1]
             # ^ [1] because I don't want mn_scores, just k
@@ -161,7 +166,10 @@ for birdID, bird_data in data_by_bird.items():
                 shlv['holdout_sample_IDs'] = holdout_sample_IDs
                 shlv['train_sample_total_duration'] = train_sample_total_duration
                 shlv['train_sample_no_intro_total_duration'] = train_sample_no_intro_total_duration 
-
+                shlv['test_labels'] = test_labels # in case of some error w/source data files, want record of test_labels *in* results file
+                shlv['linsvm_test_labels'] = linsvm_test_labels
+                shlv['linsvm_test_labels_no_intro'] = linsvm_test_labels_no_intro
+                
                 shlv['linsvm_holdout_pred_labels'] = linsvm_holdout_pred_labels
                 shlv['linsvm_holdout_acc'] = linsvm_holdout_acc
                 shlv['linsvm_holdout_vals'] = linsvm_holdout_vals

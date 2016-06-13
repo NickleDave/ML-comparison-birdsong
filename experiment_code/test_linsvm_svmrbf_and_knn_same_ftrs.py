@@ -52,7 +52,7 @@ for birdID, bird_data in data_by_bird.items():
     labelset = [ord(label) for label in labelset]
     intro_labels = list(bird_data['intro labels'])
     intro_labels = [ord(label) for label in intro_labels] 
-    
+ 
     train_samples,train_labels,train_song_IDs = load_from_mat(train_fname)
     train_samples,train_labels,train_song_IDs = filter_samples(train_samples,train_labels,labelset,train_song_IDs)
     train_samples = train_samples[:,-24:-4] # just acoustic features from Tachibana + duration and no. of zero crossings
@@ -166,7 +166,10 @@ for birdID, bird_data in data_by_bird.items():
                 shlv['holdout_sample_IDs'] = holdout_sample_IDs
                 shlv['train_sample_total_duration'] = train_sample_total_duration
                 shlv['train_sample_no_intro_total_duration'] = train_sample_no_intro_total_duration 
-
+                shlv['test_labels'] = test_labels # in case of some error w/source data files, want record of test_labels *in* results file
+                shlv['linsvm_test_labels'] = linsvm_test_labels
+                shlv['linsvm_test_labels_no_intro'] = linsvm_test_labels_no_intro
+                
                 shlv['linsvm_holdout_pred_labels'] = linsvm_holdout_pred_labels
                 shlv['linsvm_holdout_acc'] = linsvm_holdout_acc
                 shlv['linsvm_holdout_vals'] = linsvm_holdout_vals
