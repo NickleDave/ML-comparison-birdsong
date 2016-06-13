@@ -46,11 +46,6 @@ scaler_no_intro = StandardScaler()
 for birdID, bird_data in data_by_bird.items():
     print("analyzing: " + birdID)
 
-    #<sh*tty hack>
-    if birdID != 'bl26lb16':
-        continue
-    #</sh*tty hack>
-
     train_fname = os.path.join(DATA_DIR + bird_data['knn_train_feat'])
     test_fname = os.path.join(DATA_DIR + bird_data['knn_test_feat'])
     labelset = list(bird_data['labelset'])
