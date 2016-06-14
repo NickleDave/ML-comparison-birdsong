@@ -1,5 +1,4 @@
 #from standard library
-import pdb
 import os
 import json
 import shelve
@@ -72,6 +71,7 @@ cols = len(NUM_SONGS_TO_TEST)
 
 ### main loop
 for bird_ID, bird_data in data_by_bird.items():
+    print('creating summary file for {}'.format(bird_ID))
     svm_train_fname = os.path.join(DATA_DIR + bird_data['svm_train_feat'])
     svm_test_fname = os.path.join(DATA_DIR + bird_data['svm_test_feat'])
     knn_train_fname = os.path.join(DATA_DIR + bird_data['knn_train_feat'])
@@ -130,69 +130,74 @@ for bird_ID, bird_data in data_by_bird.items():
     # get labels from data to calculate accuracy and confusion matrices
     svm_train_labels = load_from_mat(svm_train_fname)[1] # [1] because don't need samples or song_IDs returned by load_from_mat
     svm_train_labels = filter_labels(svm_train_labels,labelset)
-    svm_test_labels = load_from_mat(svm_test_fname)[1]
-    svm_test_labels = filter_labels(svm_test_labels,labelset)
-    svm_test_labels_no_intro = filter_labels(svm_test_labels,non_intro_note_labelset)  
-    knn_train_labels = load_knn_data(knn_train_fname,labelset)[1]
     knn_test_labels = load_knn_data(knn_test_fname,labelset)[1] 
-    assert np.array_equal(knn_train_labels,svm_train_labels)
 
     ### loop that opens shelve database file for each replicate and puts values into summary data matrices
     for col_ind, num_songs in enumerate(NUM_SONGS_TO_TEST):
         for row_ind,replicate in enumerate(REPLICATES):
+            print('loading shelve file for {0}, {1} songs, replicate {2}'.format(bird_ID,num_songs,replicate))
             shelve_fname = RESULTS_DIR + SHELVE_BASE_FNAME + str(bird_ID) + ", " + str(num_songs) + ' songs, replicate ' + str(replicate) + '.db'
-            with shelve.open(shelve_fname,'r') as shv:
+            with shelve.open(shelve_fname,'r') as replicate_shv:
                 # get number of samples, duration of samples 
-                train_sample_IDs = shv['train_sample_IDs']
+                train_sample_IDs = replicate_shv['train_sample_IDs']
                 num_train_samples[row_ind,col_ind] = len(train_sample_IDs)
-                train_sample_total_duration[row_ind,col_ind] = shv['train_sample_total_duration']
-                train_sample_no_intro_total_duration[row_ind,col_ind] = shv['train_sample_no_intro_total_duration']
+                train_sample_total_duration[row_ind,col_ind] = replicate_shv['train_sample_total_duration']
+                train_sample_no_intro_total_duration[row_ind,col_ind] = replicate_shv['train_sample_no_intro_total_duration']
                 # need holdout sample indices to determine accuracy on holdout sets
-                holdout_sample_IDs = shv['holdout_sample_IDs']
+                holdout_sample_IDs = replicate_shv['holdout_sample_IDs']
                 holdout_labels = svm_train_labels[holdout_sample_IDs]
                 holdout_labels_no_intro = filter_labels(holdout_labels,non_intro_note_labelset) #removes intro notes
+                test_labels = replicate_shv['test_labels']
+                #did not include test_labels_no_intro in replicate shelve files, but did include 'linsvm_test_labels_no_intro'
+                #which is the same thing converted from numpy array to a list of integers
+                # since liblinear API only accepts the list
+                linsvm_test_labels_no_intro = replicate_shv['linsvm_test_labels_no_intro']
+                linsvm_test_labels_no_intro = np.asarray(linsvm_test_labels_no_intro) # for average acc. by label below
+                try:
+                    # make sure 'test_labels' from replicate shelve file == original 'knn_test_labels' from .mat data file
+                    assert np.array_equal(test_labels,knn_test_labels)
+                except AssertionError:
+                    pdb.set_trace()
                 
                 # put Rand accuracies in summary data matrices
                 # below, [0] at end of line because liblinear Python API returns 3-element tuple, 1st element is acc.
-                linsvm_holdout_rnd_acc[row_ind,col_ind] = shv['linsvm_holdout_acc'][0]  
-                linsvm_test_rnd_acc[row_ind,col_ind] = shv['linsvm_test_acc'][0]
+                linsvm_holdout_rnd_acc[row_ind,col_ind] = replicate_shv['linsvm_holdout_acc'][0]  
+                linsvm_test_rnd_acc[row_ind,col_ind] = replicate_shv['linsvm_test_acc'][0]
                 linsvm_holdout_no_intro_rnd_acc[row_ind,col_ind] = \
-                    shv['linsvm_holdout_no_intro_acc'][0]
+                    replicate_shv['linsvm_holdout_no_intro_acc'][0]
                 linsvm_test_no_intro_rnd_acc[row_ind,col_ind] = \
-                    shv['linsvm_test_no_intro_acc'][0]
-                svm_holdout_rnd_acc[row_ind,col_ind] = shv['svm_holdout_score'] * 100
-                svm_test_rnd_acc[row_ind,col_ind] = shv['svm_test_score'] * 100
-                knn_holdout_rnd_acc[row_ind,col_ind] = shv['knn_holdout_score'] * 100
-                knn_test_rnd_acc[row_ind,col_ind] = shv['knn_test_score'] * 100
+                    replicate_shv['linsvm_test_no_intro_acc'][0]
+                svm_holdout_rnd_acc[row_ind,col_ind] = replicate_shv['svm_holdout_score'] * 100
+                svm_test_rnd_acc[row_ind,col_ind] = replicate_shv['svm_test_score'] * 100
+                knn_holdout_rnd_acc[row_ind,col_ind] = replicate_shv['knn_holdout_score'] * 100
+                knn_test_rnd_acc[row_ind,col_ind] = replicate_shv['knn_test_score'] * 100
 
                 # put average per-label accuracies in summary data matrices
                 # and make confusion matrices
-                linsvm_holdout_pred_labels = shv['linsvm_holdout_pred_labels']
+                linsvm_holdout_pred_labels = replicate_shv['linsvm_holdout_pred_labels']
                 #have to convert to array since liblinear Python interface returns a list
                 linsvm_holdout_pred_labels = np.asarray(linsvm_holdout_pred_labels,dtype='uint32')
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,linsvm_holdout_pred_labels,labelset)
                 linsvm_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
                 linsvm_holdout_confuse_mat = confuse_mat(holdout_labels,linsvm_holdout_pred_labels,labels=labelset)
-                linsvm_holdout_cm_arr[row_ind,col_ind]  = linsvm_holdout_confuse_mat
+                linsvm_holdout_cm_arr[row_ind,col_ind] = linsvm_holdout_confuse_mat
 
-                linsvm_test_pred_labels = shv['linsvm_test_pred_labels']
-                pdb.set_trace()
+                linsvm_test_pred_labels = replicate_shv['linsvm_test_pred_labels']
                 #have to convert to array since liblinear Python interface returns a list
                 linsvm_test_pred_labels = np.asarray(linsvm_test_pred_labels,dtype='uint32')
-                try:
-                    acc_by_label,avg_acc = get_acc_by_label(svm_test_labels,linsvm_test_pred_labels,labelset)
-                except IndexError:
-                    pdb.set_trace()
+                acc_by_label,avg_acc = get_acc_by_label(test_labels,linsvm_test_pred_labels,labelset)
                 linsvm_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                linsvm_test_confuse_mat = confuse_mat(svm_test_labels,linsvm_test_pred_labels,labels=labelset)
+                linsvm_test_confuse_mat = confuse_mat(test_labels,linsvm_test_pred_labels,labels=labelset)
                 linsvm_test_cm_arr[row_ind,col_ind] = linsvm_test_confuse_mat
 
-                linsvm_holdout_no_intro_pred_labels = shv['linsvm_holdout_no_intro_pred_labels']
+                linsvm_holdout_no_intro_pred_labels = replicate_shv['linsvm_holdout_no_intro_pred_labels']
                 #have to convert to array since liblinear Python interface returns a list
                 linsvm_holdout_no_intro_pred_labels = np.asarray(linsvm_holdout_no_intro_pred_labels,dtype='uint32')
-                acc_by_label,avg_acc = get_acc_by_label(holdout_labels_no_intro,linsvm_holdout_no_intro_pred_labels,non_intro_note_labelset)
+                acc_by_label,avg_acc = get_acc_by_label(holdout_labels_no_intro,
+                                                        linsvm_holdout_no_intro_pred_labels,
+                                                        non_intro_note_labelset)
                 linsvm_holdout_no_intro_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_holdout_no_intro_avg_acc[row_ind,col_ind] = avg_acc * 100
                 linsvm_holdout_no_intro_confuse_mat = confuse_mat(holdout_labels_no_intro,
@@ -200,69 +205,72 @@ for bird_ID, bird_data in data_by_bird.items():
                                                                 labels=non_intro_note_labelset)
                 linsvm_holdout_no_intro_cm_arr[row_ind,col_ind]  = linsvm_holdout_no_intro_confuse_mat
                 
-                linsvm_test_no_intro_pred_labels = shv['linsvm_test_no_intro_pred_labels']
+                linsvm_test_no_intro_pred_labels = replicate_shv['linsvm_test_no_intro_pred_labels']
                 #have to convert to array since liblinear Python interface returns a list
                 linsvm_test_no_intro_pred_labels = np.asarray(linsvm_test_no_intro_pred_labels,dtype='uint32')
-                acc_by_label,avg_acc = get_acc_by_label(svm_test_labels_no_intro,linsvm_test_no_intro_pred_labels,non_intro_note_labelset)
+                acc_by_label,avg_acc = get_acc_by_label(linsvm_test_labels_no_intro,
+                                                        linsvm_test_no_intro_pred_labels,
+                                                        non_intro_note_labelset)
                 linsvm_test_no_intro_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 linsvm_test_no_intro_avg_acc[row_ind,col_ind] = avg_acc * 100
-                linsvm_test_no_intro_confuse_mat = confuse_mat(svm_test_labels_no_intro,
+                linsvm_test_no_intro_confuse_mat = confuse_mat(linsvm_test_labels_no_intro,
                                                             linsvm_test_no_intro_pred_labels,
                                                             labels=non_intro_note_labelset)
                 linsvm_test_no_intro_cm_arr[row_ind,col_ind] = linsvm_test_no_intro_confuse_mat
 
-                svm_holdout_pred_labels = shv['svm_holdout_pred_labels']
+                svm_holdout_pred_labels = replicate_shv['svm_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,svm_holdout_pred_labels,labelset)
                 svm_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 svm_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
                 svm_holdout_confuse_mat = confuse_mat(holdout_labels,svm_holdout_pred_labels,labels=labelset)
                 svm_holdout_cm_arr[row_ind,col_ind]  = svm_holdout_confuse_mat
                 
-                svm_test_pred_labels = shv['svm_test_pred_labels']
-                acc_by_label,avg_acc = get_acc_by_label(svm_test_labels,svm_test_pred_labels,labelset)
+                svm_test_pred_labels = replicate_shv['svm_test_pred_labels']
+                acc_by_label,avg_acc = get_acc_by_label(test_labels,svm_test_pred_labels,labelset)
                 svm_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 svm_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                svm_test_confuse_mat = confuse_mat(svm_test_labels,svm_test_pred_labels,labels=labelset)
+                svm_test_confuse_mat = confuse_mat(test_labels,svm_test_pred_labels,labels=labelset)
                 svm_test_cm_arr[row_ind,col_ind] = svm_test_confuse_mat
                                 
-                knn_holdout_pred_labels = shv['knn_holdout_pred_labels']
+                knn_holdout_pred_labels = replicate_shv['knn_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,knn_holdout_pred_labels,labelset)
                 knn_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 knn_holdout_avg_acc[row_ind,col_ind] = avg_acc * 100
                 knn_holdout_confuse_mat = confuse_mat(holdout_labels,knn_holdout_pred_labels,labels=labelset)
                 knn_holdout_cm_arr[row_ind,col_ind] = knn_holdout_confuse_mat
                                 
-                knn_test_pred_labels = shv['knn_test_pred_labels']
-                acc_by_label,avg_acc = get_acc_by_label(knn_test_labels,knn_test_pred_labels,labelset)
+                knn_test_pred_labels = replicate_shv['knn_test_pred_labels']
+                acc_by_label,avg_acc = get_acc_by_label(test_labels,knn_test_pred_labels,labelset)
                 knn_test_acc_by_label[row_ind,col_ind] = acc_by_label * 100
                 knn_test_avg_acc[row_ind,col_ind] = avg_acc * 100
-                knn_test_confuse_mat = confuse_mat(knn_test_labels,knn_test_pred_labels,labels=labelset)
+                knn_test_confuse_mat = confuse_mat(test_labels,knn_test_pred_labels,labels=labelset)
                 knn_test_cm_arr[row_ind,col_ind] = knn_test_confuse_mat
-            shv.close()
+            replicate_shv.close()
 
     results_fname = RESULTS_DIR + bird_ID + RESULTS_SHV_BASE_FNAME
     # now put all the summary data matrices in a summary data shelve database
-    with shelve.open(results_fname) as shv:
-        shv['train_sample_total_duration'] = train_sample_total_duration
-        shv['num_train_samples'] = num_train_samples
-        shv['labelset'] = labelset
-        shv['non_intro_note_labelset'] = non_intro_note_labelset
+    print('saving summary file for {}'.format(bird_ID))
+    with shelve.open(results_fname) as summary_shv:
+        summary_shv['train_sample_total_duration'] = train_sample_total_duration
+        summary_shv['num_train_samples'] = num_train_samples
+        summary_shv['labelset'] = labelset
+        summary_shv['non_intro_note_labelset'] = non_intro_note_labelset
 
-        shv['linsvm_holdout_rnd_acc'] = linsvm_holdout_rnd_acc
-        shv['linsvm_holdout_rnd_acc_mn'] = np.mean(linsvm_holdout_rnd_acc,axis=0)
-        shv['linsvm_holdout_rnd_acc_std'] = np.std(linsvm_holdout_rnd_acc,axis=0)
+        summary_shv['linsvm_holdout_rnd_acc'] = linsvm_holdout_rnd_acc
+        summary_shv['linsvm_holdout_rnd_acc_mn'] = np.mean(linsvm_holdout_rnd_acc,axis=0)
+        summary_shv['linsvm_holdout_rnd_acc_std'] = np.std(linsvm_holdout_rnd_acc,axis=0)
 
-        shv['linsvm_test_rnd_acc'] = linsvm_test_rnd_acc
-        shv['linsvm_test_rnd_acc_mn'] = np.mean(linsvm_test_rnd_acc,axis=0)
-        shv['linsvm_test_rnd_acc_std'] = np.std(linsvm_test_rnd_acc,axis=0)
+        summary_shv['linsvm_test_rnd_acc'] = linsvm_test_rnd_acc
+        summary_shv['linsvm_test_rnd_acc_mn'] = np.mean(linsvm_test_rnd_acc,axis=0)
+        summary_shv['linsvm_test_rnd_acc_std'] = np.std(linsvm_test_rnd_acc,axis=0)
 
-        shv['linsvm_holdout_no_intro_rnd_acc'] = linsvm_holdout_no_intro_rnd_acc
-        shv['linsvm_holdout_no_intro_rnd_acc_mn'] = np.mean(linsvm_holdout_no_intro_rnd_acc,axis=0)
-        shv['linsvm_holdout_no_intro_rnd_acc_std'] = np.std(linsvm_holdout_no_intro_rnd_acc,axis=0)
+        summary_shv['linsvm_holdout_no_intro_rnd_acc'] = linsvm_holdout_no_intro_rnd_acc
+        summary_shv['linsvm_holdout_no_intro_rnd_acc_mn'] = np.mean(linsvm_holdout_no_intro_rnd_acc,axis=0)
+        summary_shv['linsvm_holdout_no_intro_rnd_acc_std'] = np.std(linsvm_holdout_no_intro_rnd_acc,axis=0)
 
-        shv['linsvm_test_no_intro_rnd_acc'] = linsvm_test_no_intro_rnd_acc
-        shv['linsvm_test_no_intro_rnd_acc_mn'] = np.mean(linsvm_test_no_intro_rnd_acc,axis=0)
-        shv['linsvm_test_no_intro_rnd_acc_std'] = np.std(linsvm_test_no_intro_rnd_acc,axis=0)
+        summary_shv['linsvm_test_no_intro_rnd_acc'] = linsvm_test_no_intro_rnd_acc
+        summary_shv['linsvm_test_no_intro_rnd_acc_mn'] = np.mean(linsvm_test_no_intro_rnd_acc,axis=0)
+        summary_shv['linsvm_test_no_intro_rnd_acc_std'] = np.std(linsvm_test_no_intro_rnd_acc,axis=0)
 
         #for linear svm only, bin accuracy by number of samples, then get mean and std. dev.
         #only take accuracy from test set, to compare directly with Tachibana
@@ -274,73 +282,73 @@ for bird_ID, bird_data in data_by_bird.items():
         indices = np.digitize(num_train_samples_flat,BINS)
         bin_means = [linsvm_test_rnd_acc_flat[indices == i].mean() for i in range(1, len(BINS))]
         bin_std = [linsvm_test_rnd_acc_flat[indices == i].std() for i in range(1, len(BINS))]
-        shv['linsvm_test_rnd_acc_flat'] = linsvm_test_rnd_acc_flat
-        shv['num_train_samples_flat'] = num_train_samples_flat
-        shv['linsvm_train_sample_bins'] = BINS
-        shv['linsvm_test_rnd_acc_by_sample_mn'] = bin_means
-        shv['linsvm_test_rnd_acc_by_sample_std'] = bin_std
+        summary_shv['linsvm_test_rnd_acc_flat'] = linsvm_test_rnd_acc_flat
+        summary_shv['num_train_samples_flat'] = num_train_samples_flat
+        summary_shv['linsvm_train_sample_bins'] = BINS
+        summary_shv['linsvm_test_rnd_acc_by_sample_mn'] = bin_means
+        summary_shv['linsvm_test_rnd_acc_by_sample_std'] = bin_std
 
-        shv['svm_holdout_rnd_acc'] = svm_holdout_rnd_acc
-        shv['svm_holdout_rnd_acc_mn'] = np.mean(svm_holdout_rnd_acc,axis=0)
-        shv['svm_holdout_rnd_acc_std'] = np.std(svm_holdout_rnd_acc,axis=0)
+        summary_shv['svm_holdout_rnd_acc'] = svm_holdout_rnd_acc
+        summary_shv['svm_holdout_rnd_acc_mn'] = np.mean(svm_holdout_rnd_acc,axis=0)
+        summary_shv['svm_holdout_rnd_acc_std'] = np.std(svm_holdout_rnd_acc,axis=0)
 
-        shv['svm_test_rnd_acc'] = svm_test_rnd_acc
-        shv['svm_test_rnd_acc_mn'] = np.mean(svm_test_rnd_acc,axis=0)
-        shv['svm_test_rnd_acc_std'] = np.std(svm_test_rnd_acc,axis=0)
+        summary_shv['svm_test_rnd_acc'] = svm_test_rnd_acc
+        summary_shv['svm_test_rnd_acc_mn'] = np.mean(svm_test_rnd_acc,axis=0)
+        summary_shv['svm_test_rnd_acc_std'] = np.std(svm_test_rnd_acc,axis=0)
         
-        shv['knn_holdout_rnd_acc'] = knn_holdout_rnd_acc
-        shv['knn_holdout_rnd_acc_mn'] = np.mean(knn_holdout_rnd_acc,axis=0)
-        shv['knn_holdout_rnd_acc_std'] = np.std(knn_holdout_rnd_acc,axis=0)
+        summary_shv['knn_holdout_rnd_acc'] = knn_holdout_rnd_acc
+        summary_shv['knn_holdout_rnd_acc_mn'] = np.mean(knn_holdout_rnd_acc,axis=0)
+        summary_shv['knn_holdout_rnd_acc_std'] = np.std(knn_holdout_rnd_acc,axis=0)
 
-        shv['knn_test_rnd_acc'] = knn_test_rnd_acc
-        shv['knn_test_rnd_acc_mn'] = np.mean(knn_test_rnd_acc,axis=0)
-        shv['knn_test_rnd_acc_std'] = np.std(knn_test_rnd_acc,axis=0)
+        summary_shv['knn_test_rnd_acc'] = knn_test_rnd_acc
+        summary_shv['knn_test_rnd_acc_mn'] = np.mean(knn_test_rnd_acc,axis=0)
+        summary_shv['knn_test_rnd_acc_std'] = np.std(knn_test_rnd_acc,axis=0)
 
-        shv['linsvm_holdout_acc_by_label'] = linsvm_holdout_acc_by_label
-        shv['linsvm_holdout_avg_acc'] = linsvm_holdout_avg_acc
-        shv['linsvm_holdout_avg_acc_mn'] = np.mean(linsvm_holdout_avg_acc,axis=0)
-        shv['linsvm_holdout_avg_acc_std'] = np.std(linsvm_holdout_avg_acc,axis=0)
-        shv['linsvm_holdout_cm_arr'] = linsvm_holdout_cm_arr
+        summary_shv['linsvm_holdout_acc_by_label'] = linsvm_holdout_acc_by_label
+        summary_shv['linsvm_holdout_avg_acc'] = linsvm_holdout_avg_acc
+        summary_shv['linsvm_holdout_avg_acc_mn'] = np.mean(linsvm_holdout_avg_acc,axis=0)
+        summary_shv['linsvm_holdout_avg_acc_std'] = np.std(linsvm_holdout_avg_acc,axis=0)
+        summary_shv['linsvm_holdout_cm_arr'] = linsvm_holdout_cm_arr
 
-        shv['linsvm_test_acc_by_label'] = linsvm_test_acc_by_label
-        shv['linsvm_test_avg_acc'] = linsvm_test_avg_acc
-        shv['linsvm_test_avg_acc_mn'] = np.mean(linsvm_test_avg_acc,axis=0)
-        shv['linsvm_test_avg_acc_std'] = np.std(linsvm_test_avg_acc,axis=0)
-        shv['linsvm_test_cm_arr'] = linsvm_test_cm_arr
+        summary_shv['linsvm_test_acc_by_label'] = linsvm_test_acc_by_label
+        summary_shv['linsvm_test_avg_acc'] = linsvm_test_avg_acc
+        summary_shv['linsvm_test_avg_acc_mn'] = np.mean(linsvm_test_avg_acc,axis=0)
+        summary_shv['linsvm_test_avg_acc_std'] = np.std(linsvm_test_avg_acc,axis=0)
+        summary_shv['linsvm_test_cm_arr'] = linsvm_test_cm_arr
 
-        shv['linsvm_holdout_no_intro_acc_by_label'] = linsvm_holdout_no_intro_acc_by_label
-        shv['linsvm_holdout_no_intro_avg_acc'] = linsvm_holdout_no_intro_avg_acc
-        shv['linsvm_holdout_no_intro_avg_acc_mn'] = np.mean(linsvm_holdout_no_intro_avg_acc,axis=0)
-        shv['linsvm_holdout_no_intro_avg_acc_std'] = np.std(linsvm_holdout_no_intro_avg_acc,axis=0)
-        shv['linsvm_holdout_no_intro_cm_arr'] = linsvm_holdout_no_intro_cm_arr
+        summary_shv['linsvm_holdout_no_intro_acc_by_label'] = linsvm_holdout_no_intro_acc_by_label
+        summary_shv['linsvm_holdout_no_intro_avg_acc'] = linsvm_holdout_no_intro_avg_acc
+        summary_shv['linsvm_holdout_no_intro_avg_acc_mn'] = np.mean(linsvm_holdout_no_intro_avg_acc,axis=0)
+        summary_shv['linsvm_holdout_no_intro_avg_acc_std'] = np.std(linsvm_holdout_no_intro_avg_acc,axis=0)
+        summary_shv['linsvm_holdout_no_intro_cm_arr'] = linsvm_holdout_no_intro_cm_arr
 
-        shv['linsvm_test_no_intro_acc_by_label'] = linsvm_test_no_intro_acc_by_label
-        shv['linsvm_test_no_intro_avg_acc'] = linsvm_test_no_intro_avg_acc
-        shv['linsvm_test_no_intro_avg_acc_mn'] = np.mean(linsvm_test_no_intro_avg_acc,axis=0)
-        shv['linsvm_test_no_intro_avg_acc_std'] = np.std(linsvm_test_no_intro_avg_acc,axis=0)
-        shv['linsvm_test_no_intro_cm_arr'] = linsvm_test_no_intro_cm_arr
+        summary_shv['linsvm_test_no_intro_acc_by_label'] = linsvm_test_no_intro_acc_by_label
+        summary_shv['linsvm_test_no_intro_avg_acc'] = linsvm_test_no_intro_avg_acc
+        summary_shv['linsvm_test_no_intro_avg_acc_mn'] = np.mean(linsvm_test_no_intro_avg_acc,axis=0)
+        summary_shv['linsvm_test_no_intro_avg_acc_std'] = np.std(linsvm_test_no_intro_avg_acc,axis=0)
+        summary_shv['linsvm_test_no_intro_cm_arr'] = linsvm_test_no_intro_cm_arr
 
-        shv['svm_holdout_acc_by_label'] = svm_holdout_acc_by_label
-        shv['svm_holdout_avg_acc'] = svm_holdout_avg_acc
-        shv['svm_holdout_avg_acc_mn'] = np.mean(svm_holdout_avg_acc,axis=0)
-        shv['svm_holdout_avg_acc_std'] = np.std(svm_holdout_avg_acc,axis=0)
-        shv['svm_holdout_cm_arr'] = svm_holdout_cm_arr
+        summary_shv['svm_holdout_acc_by_label'] = svm_holdout_acc_by_label
+        summary_shv['svm_holdout_avg_acc'] = svm_holdout_avg_acc
+        summary_shv['svm_holdout_avg_acc_mn'] = np.mean(svm_holdout_avg_acc,axis=0)
+        summary_shv['svm_holdout_avg_acc_std'] = np.std(svm_holdout_avg_acc,axis=0)
+        summary_shv['svm_holdout_cm_arr'] = svm_holdout_cm_arr
 
-        shv['svm_test_acc_by_label'] = svm_test_acc_by_label
-        shv['svm_test_avg_acc'] = svm_test_avg_acc
-        shv['svm_test_avg_acc_mn'] = np.mean(svm_test_avg_acc,axis=0)
-        shv['svm_test_avg_acc_std'] = np.std(svm_test_avg_acc,axis=0)
-        shv['svm_test_cm_arr'] = svm_test_cm_arr
+        summary_shv['svm_test_acc_by_label'] = svm_test_acc_by_label
+        summary_shv['svm_test_avg_acc'] = svm_test_avg_acc
+        summary_shv['svm_test_avg_acc_mn'] = np.mean(svm_test_avg_acc,axis=0)
+        summary_shv['svm_test_avg_acc_std'] = np.std(svm_test_avg_acc,axis=0)
+        summary_shv['svm_test_cm_arr'] = svm_test_cm_arr
 
-        shv['knn_holdout_acc_by_label'] = knn_holdout_acc_by_label
-        shv['knn_holdout_avg_acc'] = knn_holdout_avg_acc
-        shv['knn_holdout_avg_acc_mn'] = np.mean(knn_holdout_avg_acc,axis=0)
-        shv['knn_holdout_avg_acc_std'] = np.std(knn_holdout_avg_acc,axis=0)
-        shv['knn_holdout_cm_arr'] = knn_holdout_cm_arr
+        summary_shv['knn_holdout_acc_by_label'] = knn_holdout_acc_by_label
+        summary_shv['knn_holdout_avg_acc'] = knn_holdout_avg_acc
+        summary_shv['knn_holdout_avg_acc_mn'] = np.mean(knn_holdout_avg_acc,axis=0)
+        summary_shv['knn_holdout_avg_acc_std'] = np.std(knn_holdout_avg_acc,axis=0)
+        summary_shv['knn_holdout_cm_arr'] = knn_holdout_cm_arr
       
-        shv['knn_test_acc_by_label'] = knn_test_acc_by_label
-        shv['knn_test_avg_acc'] = knn_test_avg_acc
-        shv['knn_test_avg_acc_mn'] = np.mean(knn_test_avg_acc,axis=0)
-        shv['knn_test_avg_acc_std'] = np.std(knn_test_avg_acc,axis=0)
-        shv['knn_test_cm_arr'] = knn_test_cm_arr
-    shv.close()
+        summary_shv['knn_test_acc_by_label'] = knn_test_acc_by_label
+        summary_shv['knn_test_avg_acc'] = knn_test_avg_acc
+        summary_shv['knn_test_avg_acc_mn'] = np.mean(knn_test_avg_acc,axis=0)
+        summary_shv['knn_test_avg_acc_std'] = np.std(knn_test_avg_acc,axis=0)
+        summary_shv['knn_test_cm_arr'] = knn_test_cm_arr
+    summary_shv.close()

@@ -1,5 +1,4 @@
 #from standard library
-import pdb
 import sys
 import json
 import shelve
@@ -43,7 +42,7 @@ HOLDOUT_TEST_SIZE = 0.4 # 40% of training data set used as holdout test set
 scaler = StandardScaler()
 scaler_no_intro = StandardScaler()
 
-for birdID, bird_data in data_by_bird.items():
+for birdID, bird_data in data_by_bird.items():  
     print("analyzing: " + birdID)
 
     train_fname = os.path.join(DATA_DIR + bird_data['knn_train_feat'])
