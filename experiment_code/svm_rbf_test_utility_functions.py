@@ -88,7 +88,7 @@ def grid_search(X,y):
     except ValueError as err:
         print(err)
         pdb.set_trace()
-    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
+    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv, n_jobs=-1)
     grid.fit(X, y)
     print("The best parameters are %s with a score of %0.2f"
         % (grid.best_params_, grid.best_score_))
