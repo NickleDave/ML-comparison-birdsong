@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #folder with all results
-sys.path.append('C:/Users/dnicho4/Documents/IPython Notebooks/test_everything/linsvm_svmrbf_knn_results/')
+sys.path.append('C:/Users/dnicho4/Documents/IPython Notebooks/test_everything/linsvm_svmrbf_knn_results_071916/')
 
 def convert_results_dict_to_jsonifiable(dict_in):
     """
@@ -40,7 +40,7 @@ def convert_results_dict_to_jsonifiable(dict_in):
 #constants    
 DATA_DIR = './data_for_testing/'
 JSON_FNAME = './data_for_testing/data_by_bird.JSON'
-RESULTS_DIR = './linsvm_svmrbf_knn_results/'
+RESULTS_DIR = './linsvm_svmrbf_knn_results_071916/'
 SUMMARY_SHV_BASE_FNAME = '_linsvm_svmrbf_knn_summary_results'
 
 BIRD_NAMES_DICT = {
@@ -108,6 +108,11 @@ for bird_ID in BIRD_NAMES_DICT.values():
             'linsvm_test_no_intro_rnd_acc_mn':shv['linsvm_test_no_intro_rnd_acc_mn'],
             'linsvm_test_no_intro_rnd_acc_std':shv['linsvm_test_no_intro_rnd_acc_std'],
 
+            'linsvm_train_acc_by_label':shv['linsvm_train_acc_by_label'],
+            'linsvm_train_avg_acc':shv['linsvm_train_avg_acc'],
+            'linsvm_train_avg_acc_mn':shv['linsvm_train_avg_acc_mn'],
+            'linsvm_train_avg_acc_std':shv['linsvm_train_avg_acc_std'],
+
             'linsvm_test_acc_by_label':shv['linsvm_test_acc_by_label'],
             'linsvm_test_avg_acc':shv['linsvm_test_avg_acc'],
             'linsvm_test_avg_acc_mn':shv['linsvm_test_avg_acc_mn'],
@@ -131,6 +136,12 @@ for bird_ID in BIRD_NAMES_DICT.values():
             'linsvm_test_no_intro_avg_acc_mn':shv['linsvm_test_no_intro_avg_acc_mn'],
             'linsvm_test_no_intro_avg_acc_std':shv['linsvm_test_no_intro_avg_acc_std'],
             'linsvm_test_no_intro_cm_arr':shv['linsvm_test_no_intro_cm_arr'],
+
+            'svm_Tach_train_acc_by_label':shv['svm_Tach_train_acc_by_label'],
+            'svm_Tach_train_avg_acc':shv['svm_Tach_train_avg_acc'],
+            'svm_Tach_train_avg_acc_mn':shv['svm_Tach_train_avg_acc_mn'],
+            'svm_Tach_train_avg_acc_std':shv['svm_Tach_train_avg_acc_std'],
+            'svm_Tach_train_cm_arr':shv['svm_Tach_train_cm_arr'],
             
             'svm_Tach_holdout_acc_by_label':shv['svm_Tach_holdout_acc_by_label'],
             'svm_Tach_holdout_avg_acc':shv['svm_Tach_holdout_avg_acc'],
@@ -155,6 +166,12 @@ for bird_ID in BIRD_NAMES_DICT.values():
             'svm_test_avg_acc_mn':shv['svm_test_avg_acc_mn'],
             'svm_test_avg_acc_std':shv['svm_test_avg_acc_std'],
             'svm_test_cm_arr':shv['svm_test_cm_arr'],
+
+            'knn_train_acc_by_label':shv['knn_train_acc_by_label'],
+            'knn_train_avg_acc':shv['knn_train_avg_acc'],
+            'knn_train_avg_acc_mn':shv['knn_train_avg_acc_mn'],
+            'knn_train_avg_acc_std':shv['knn_train_avg_acc_std'],
+            'knn_train_cm_arr':shv['knn_train_cm_arr'], 
 
             'knn_holdout_acc_by_label':shv['knn_holdout_acc_by_label'],
             'knn_holdout_avg_acc':shv['knn_holdout_avg_acc'],

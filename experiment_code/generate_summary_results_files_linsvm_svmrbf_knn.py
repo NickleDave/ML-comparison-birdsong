@@ -1,5 +1,4 @@
 #from standard library
-import pdb
 import os
 import json
 import shelve
@@ -40,6 +39,8 @@ def get_acc_by_label(labels,pred_labels,labelset):
     acc_by_label = np.zeros((len(labelset)))
     for ind,label in enumerate(labelset):
         label_ids = np.in1d(labels,label) #find all occurences of label in test data
+        if sum(label_ids) == 0: # if there were no instances of label in labels
+            continue
         pred_for_that_label = pred_labels[label_ids]
         matches = pred_for_that_label==label
         #sum(matches) is equal to number of true positives
@@ -88,32 +89,40 @@ for bird_ID, bird_data in data_by_bird.items():
     train_sample_no_intro_total_duration = np.zeros((rows,cols))
 
     #Rand accuracy
+    linsvm_train_rnd_acc = np.zeros((rows,cols))
     linsvm_holdout_rnd_acc = np.zeros((rows,cols))
     linsvm_test_rnd_acc = np.zeros((rows,cols))
     linsvm_holdout_no_intro_rnd_acc = np.zeros((rows,cols))
     linsvm_test_no_intro_rnd_acc = np.zeros((rows,cols))
+    svm_Tach_train_rnd_acc = np.zeros((rows,cols))
     svm_Tach_holdout_rnd_acc = np.zeros((rows,cols))
     svm_Tach_test_rnd_acc = np.zeros((rows,cols))
     svm_holdout_rnd_acc = np.zeros((rows,cols))
     svm_test_rnd_acc = np.zeros((rows,cols))
+    knn_train_rnd_acc = np.zeros((rows,cols))
     knn_holdout_rnd_acc = np.zeros((rows,cols))
     knn_test_rnd_acc = np.zeros((rows,cols))
 
     #average of per-label accuracy ( true positive / (true positive + false negative))
+    linsvm_train_avg_acc = np.zeros((rows,cols))
     linsvm_holdout_avg_acc = np.zeros((rows,cols))
     linsvm_test_avg_acc = np.zeros((rows,cols))
     linsvm_holdout_no_intro_avg_acc = np.zeros((rows,cols))
     linsvm_test_no_intro_avg_acc = np.zeros((rows,cols))
+    svm_Tach_train_avg_acc = np.zeros((rows,cols))
     svm_Tach_holdout_avg_acc = np.zeros((rows,cols))
     svm_Tach_test_avg_acc = np.zeros((rows,cols))
     svm_holdout_avg_acc = np.zeros((rows,cols))
     svm_test_avg_acc = np.zeros((rows,cols))
+    knn_train_avg_acc = np.zeros((rows,cols))
     knn_holdout_avg_acc = np.zeros((rows,cols))
     knn_test_avg_acc = np.zeros((rows,cols))
 
     #confusion matrices
     num_labels = len(labelset)
     num_labels_no_intro = len(non_intro_note_labelset)
+    linsvm_train_acc_by_label = np.zeros((rows,cols,num_labels))
+    linsvm_train_cm_arr = np.empty((rows,cols),dtype='O')
     linsvm_holdout_acc_by_label = np.zeros((rows,cols,num_labels))
     linsvm_holdout_cm_arr = np.empty((rows,cols),dtype='O')
     linsvm_test_acc_by_label = np.zeros((rows,cols,num_labels))
@@ -122,6 +131,8 @@ for bird_ID, bird_data in data_by_bird.items():
     linsvm_holdout_no_intro_cm_arr = np.empty((rows,cols),dtype='O')
     linsvm_test_no_intro_acc_by_label = np.zeros((rows,cols,num_labels_no_intro))
     linsvm_test_no_intro_cm_arr = np.empty((rows,cols),dtype='O')
+    svm_Tach_train_acc_by_label = np.zeros((rows,cols,num_labels))
+    svm_Tach_train_cm_arr = np.empty((rows,cols),dtype='O')
     svm_Tach_holdout_acc_by_label = np.zeros((rows,cols,num_labels))
     svm_Tach_holdout_cm_arr = np.empty((rows,cols),dtype='O')
     svm_Tach_test_acc_by_label = np.zeros((rows,cols,num_labels))
@@ -130,6 +141,8 @@ for bird_ID, bird_data in data_by_bird.items():
     svm_holdout_cm_arr = np.empty((rows,cols),dtype='O')
     svm_test_acc_by_label = np.zeros((rows,cols,num_labels))
     svm_test_cm_arr = np.empty((rows,cols),dtype='O')
+    knn_train_acc_by_label = np.zeros((rows,cols,num_labels))
+    knn_train_cm_arr = np.empty((rows,cols),dtype='O')
     knn_holdout_acc_by_label = np.zeros((rows,cols,num_labels))
     knn_holdout_cm_arr = np.empty((rows,cols),dtype='O')
     knn_test_acc_by_label = np.zeros((rows,cols,num_labels))
@@ -152,6 +165,7 @@ for bird_ID, bird_data in data_by_bird.items():
             with shelve.open(shelve_fname,'r') as shv:
                 # get number of samples, duration of samples 
                 train_sample_IDs = shv['train_sample_IDs']
+                train_labels = svm_train_labels[train_sample_IDs]
                 num_train_samples[row_ind,col_ind] = len(train_sample_IDs)
                 train_sample_total_duration[row_ind,col_ind] = shv['train_sample_total_duration']
                 train_sample_no_intro_total_duration[row_ind,col_ind] = shv['train_sample_no_intro_total_duration']
@@ -162,6 +176,7 @@ for bird_ID, bird_data in data_by_bird.items():
                 
                 # put Rand accuracies in summary data matrices
                 # below, [0] at end of line because liblinear Python API returns 3-element tuple, 1st element is acc.
+                linsvm_train_rnd_acc[row_ind,col_ind] = shv['linsvm_train_acc'][0]  
                 linsvm_holdout_rnd_acc[row_ind,col_ind] = shv['linsvm_holdout_acc'][0]  
                 linsvm_test_rnd_acc[row_ind,col_ind] = shv['linsvm_test_acc'][0]
                 linsvm_holdout_no_intro_rnd_acc[row_ind,col_ind] = \
@@ -170,13 +185,24 @@ for bird_ID, bird_data in data_by_bird.items():
                     shv['linsvm_test_no_intro_acc'][0]
                 svm_holdout_rnd_acc[row_ind,col_ind] = shv['svm_holdout_score'] * 100
                 svm_test_rnd_acc[row_ind,col_ind] = shv['svm_test_score'] * 100
+                svm_Tach_train_rnd_acc[row_ind,col_ind] = shv['svm_Tach_train_score'] * 100
                 svm_Tach_holdout_rnd_acc[row_ind,col_ind] = shv['svm_Tach_holdout_score'] * 100
                 svm_Tach_test_rnd_acc[row_ind,col_ind] = shv['svm_Tach_test_score'] * 100
+                knn_train_rnd_acc[row_ind,col_ind] = shv['knn_train_score'] * 100
                 knn_holdout_rnd_acc[row_ind,col_ind] = shv['knn_holdout_score'] * 100
                 knn_test_rnd_acc[row_ind,col_ind] = shv['knn_test_score'] * 100
 
                 # put average per-label accuracies in summary data matrices
                 # and make confusion matrices
+                linsvm_train_pred_labels = shv['linsvm_train_pred_labels']
+                #have to convert to array since liblinear Python interface returns a list
+                linsvm_train_pred_labels = np.asarray(linsvm_train_pred_labels,dtype='uint32')
+                acc_by_label,avg_acc = get_acc_by_label(train_labels,linsvm_train_pred_labels,labelset)
+                linsvm_train_acc_by_label[row_ind,col_ind] = acc_by_label * 100
+                linsvm_train_avg_acc[row_ind,col_ind] = avg_acc * 100
+                linsvm_train_confuse_mat = confuse_mat(train_labels,linsvm_train_pred_labels,labels=labelset)
+                linsvm_train_cm_arr[row_ind,col_ind]  = linsvm_train_confuse_mat
+
                 linsvm_holdout_pred_labels = shv['linsvm_holdout_pred_labels']
                 #have to convert to array since liblinear Python interface returns a list
                 linsvm_holdout_pred_labels = np.asarray(linsvm_holdout_pred_labels,dtype='uint32')
@@ -217,6 +243,13 @@ for bird_ID, bird_data in data_by_bird.items():
                                                             labels=non_intro_note_labelset)
                 linsvm_test_no_intro_cm_arr[row_ind,col_ind] = linsvm_test_no_intro_confuse_mat
 
+                svm_Tach_train_pred_labels = shv['svm_Tach_train_pred_labels']
+                acc_by_label,avg_acc = get_acc_by_label(train_labels,svm_Tach_train_pred_labels,labelset)
+                svm_Tach_train_acc_by_label[row_ind,col_ind] = acc_by_label * 100
+                svm_Tach_train_avg_acc[row_ind,col_ind] = avg_acc * 100
+                svm_Tach_train_confuse_mat = confuse_mat(train_labels,svm_Tach_train_pred_labels,labels=labelset)
+                svm_Tach_train_cm_arr[row_ind,col_ind]  = svm_Tach_train_confuse_mat
+                
                 svm_Tach_holdout_pred_labels = shv['svm_Tach_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,svm_Tach_holdout_pred_labels,labelset)
                 svm_Tach_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
@@ -244,7 +277,14 @@ for bird_ID, bird_data in data_by_bird.items():
                 svm_test_avg_acc[row_ind,col_ind] = avg_acc * 100
                 svm_test_confuse_mat = confuse_mat(svm_test_labels,svm_test_pred_labels,labels=labelset)
                 svm_test_cm_arr[row_ind,col_ind] = svm_test_confuse_mat
-                                
+
+                knn_train_pred_labels = shv['knn_train_pred_labels']
+                acc_by_label,avg_acc = get_acc_by_label(train_labels,knn_train_pred_labels,labelset)
+                knn_train_acc_by_label[row_ind,col_ind] = acc_by_label * 100
+                knn_train_avg_acc[row_ind,col_ind] = avg_acc * 100
+                knn_train_confuse_mat = confuse_mat(train_labels,knn_train_pred_labels,labels=labelset)
+                knn_train_cm_arr[row_ind,col_ind] = knn_train_confuse_mat
+                                                
                 knn_holdout_pred_labels = shv['knn_holdout_pred_labels']
                 acc_by_label,avg_acc = get_acc_by_label(holdout_labels,knn_holdout_pred_labels,labelset)
                 knn_holdout_acc_by_label[row_ind,col_ind] = acc_by_label * 100
@@ -267,6 +307,10 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['num_train_samples'] = num_train_samples
         shv['labelset'] = labelset
         shv['non_intro_note_labelset'] = non_intro_note_labelset
+
+        shv['linsvm_train_rnd_acc'] = linsvm_train_rnd_acc
+        shv['linsvm_train_rnd_acc_mn'] = np.mean(linsvm_train_rnd_acc,axis=0)
+        shv['linsvm_train_rnd_acc_std'] = np.std(linsvm_train_rnd_acc,axis=0)
 
         shv['linsvm_holdout_rnd_acc'] = linsvm_holdout_rnd_acc
         shv['linsvm_holdout_rnd_acc_mn'] = np.mean(linsvm_holdout_rnd_acc,axis=0)
@@ -300,6 +344,10 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['linsvm_test_rnd_acc_by_sample_mn'] = bin_means
         shv['linsvm_test_rnd_acc_by_sample_std'] = bin_std
 
+        shv['svm_Tach_train_rnd_acc'] = svm_Tach_train_rnd_acc
+        shv['svm_Tach_train_rnd_acc_mn'] = np.mean(svm_Tach_train_rnd_acc,axis=0)
+        shv['svm_Tach_train_rnd_acc_std'] = np.std(svm_Tach_train_rnd_acc,axis=0)
+        
         shv['svm_Tach_holdout_rnd_acc'] = svm_Tach_holdout_rnd_acc
         shv['svm_Tach_holdout_rnd_acc_mn'] = np.mean(svm_Tach_holdout_rnd_acc,axis=0)
         shv['svm_Tach_holdout_rnd_acc_std'] = np.std(svm_Tach_holdout_rnd_acc,axis=0)
@@ -315,7 +363,11 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['svm_test_rnd_acc'] = svm_test_rnd_acc
         shv['svm_test_rnd_acc_mn'] = np.mean(svm_test_rnd_acc,axis=0)
         shv['svm_test_rnd_acc_std'] = np.std(svm_test_rnd_acc,axis=0)
-        
+
+        shv['knn_train_rnd_acc'] = knn_train_rnd_acc
+        shv['knn_train_rnd_acc_mn'] = np.mean(knn_train_rnd_acc,axis=0)
+        shv['knn_train_rnd_acc_std'] = np.std(knn_train_rnd_acc,axis=0)
+                
         shv['knn_holdout_rnd_acc'] = knn_holdout_rnd_acc
         shv['knn_holdout_rnd_acc_mn'] = np.mean(knn_holdout_rnd_acc,axis=0)
         shv['knn_holdout_rnd_acc_std'] = np.std(knn_holdout_rnd_acc,axis=0)
@@ -324,6 +376,12 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['knn_test_rnd_acc_mn'] = np.mean(knn_test_rnd_acc,axis=0)
         shv['knn_test_rnd_acc_std'] = np.std(knn_test_rnd_acc,axis=0)
 
+        shv['linsvm_train_acc_by_label'] = linsvm_train_acc_by_label
+        shv['linsvm_train_avg_acc'] = linsvm_train_avg_acc
+        shv['linsvm_train_avg_acc_mn'] = np.mean(linsvm_train_avg_acc,axis=0)
+        shv['linsvm_train_avg_acc_std'] = np.std(linsvm_train_avg_acc,axis=0)
+        shv['linsvm_train_cm_arr'] = linsvm_train_cm_arr
+        
         shv['linsvm_holdout_acc_by_label'] = linsvm_holdout_acc_by_label
         shv['linsvm_holdout_avg_acc'] = linsvm_holdout_avg_acc
         shv['linsvm_holdout_avg_acc_mn'] = np.mean(linsvm_holdout_avg_acc,axis=0)
@@ -348,6 +406,12 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['linsvm_test_no_intro_avg_acc_std'] = np.std(linsvm_test_no_intro_avg_acc,axis=0)
         shv['linsvm_test_no_intro_cm_arr'] = linsvm_test_no_intro_cm_arr
 
+        shv['svm_Tach_train_acc_by_label'] = svm_Tach_train_acc_by_label
+        shv['svm_Tach_train_avg_acc'] = svm_Tach_train_avg_acc
+        shv['svm_Tach_train_avg_acc_mn'] = np.mean(svm_Tach_train_avg_acc,axis=0)
+        shv['svm_Tach_train_avg_acc_std'] = np.std(svm_Tach_train_avg_acc,axis=0)
+        shv['svm_Tach_train_cm_arr'] = svm_Tach_train_cm_arr
+        
         shv['svm_Tach_holdout_acc_by_label'] = svm_Tach_holdout_acc_by_label
         shv['svm_Tach_holdout_avg_acc'] = svm_Tach_holdout_avg_acc
         shv['svm_Tach_holdout_avg_acc_mn'] = np.mean(svm_Tach_holdout_avg_acc,axis=0)
@@ -372,6 +436,12 @@ for bird_ID, bird_data in data_by_bird.items():
         shv['svm_test_avg_acc_std'] = np.std(svm_test_avg_acc,axis=0)
         shv['svm_test_cm_arr'] = svm_test_cm_arr
 
+        shv['knn_train_acc_by_label'] = knn_train_acc_by_label
+        shv['knn_train_avg_acc'] = knn_train_avg_acc
+        shv['knn_train_avg_acc_mn'] = np.mean(knn_train_avg_acc,axis=0)
+        shv['knn_train_avg_acc_std'] = np.std(knn_train_avg_acc,axis=0)
+        shv['knn_train_cm_arr'] = knn_train_cm_arr
+        
         shv['knn_holdout_acc_by_label'] = knn_holdout_acc_by_label
         shv['knn_holdout_avg_acc'] = knn_holdout_avg_acc
         shv['knn_holdout_avg_acc_mn'] = np.mean(knn_holdout_avg_acc,axis=0)

@@ -21,7 +21,7 @@ from knn_test_functions import load_knn_data, find_best_k
 
 #constants
 DATA_DIR = './data_for_testing/'
-TARGET_RESULTS_DIR = './linsvm_svmrbf_knn_results/'
+RESULTS_DIR = './linsvm_svmrbf_knn_results/'
 JSON_FNAME = './data_for_testing/data_by_bird.JSON'
 RESULTS_SHELVE_BASE_FNAME = 'linsvm_svmrbf_knn_results_'
 TRAIN_PARAMS = parameter('-s 1 -c 1 -q') # for liblinear library function
@@ -35,7 +35,7 @@ with open(JSON_FNAME) as json_file:
 # constants used in main loop
 NUM_SONGS_TO_TEST = list(range(3,16,3)) + [21,27,33,39]
 # i.e., [3,6,9,...15,21,27,33,39].
-REPLICATES = range(0,5)
+REPLICATES = range(1,6)
 HOLDOUT_TEST_SIZE = 0.4 # 40% of training data set used as holdout test set
 
 # scalers from scikit used in main loop
@@ -45,9 +45,9 @@ knn_scaler = StandardScaler()
 
 
 ### main loop
-for birdID, bird_data in data_by_bird.items():     
+for birdID, bird_data in data_by_bird.items():
     print("analyzing: " + birdID)
-    
+
     #load train/test data, label names
     svm_train_fname = os.path.join(DATA_DIR + bird_data['svm_train_feat'])
     svm_test_fname = os.path.join(DATA_DIR + bird_data['svm_test_feat'])
@@ -61,8 +61,7 @@ for birdID, bird_data in data_by_bird.items():
     svm_train_samples,svm_train_labels,svm_train_song_IDs = load_from_mat(svm_train_fname)
     svm_train_samples,svm_train_labels,svm_train_song_IDs = filter_samples(svm_train_samples,
                                                                             svm_train_labels,
-                                                                            labelset,
-                                                                            svm_train_song_IDs)
+                                                                            labelset,svm_train_song_IDs)
     svm_test_samples,svm_test_labels,svm_test_song_IDs = load_from_mat(svm_test_fname)
     svm_test_samples,svm_test_labels = filter_samples(svm_test_samples,
                                                         svm_test_labels,
@@ -79,7 +78,7 @@ for birdID, bird_data in data_by_bird.items():
     for ind, num_songs in enumerate(NUM_SONGS_TO_TEST):
         print("Testing accuracy for training set composed of " + str(num_songs) + " songs")
         for replicate in REPLICATES:
-            print("Replicate " + str(replicate + 1) + ". ")
+            print("Replicate " + str(replicate) + ". ")
             # below in call to train_test_song_split, note that "num_songs" is # used to train and 
             # HOLDOUT_TEST_SIZE is # used to test (from original training set)
             svm_train_samples_subset,svm_train_labels_subset,svm_holdout_samples,svm_holdout_labels,train_sample_IDs,holdout_sample_IDs = \
@@ -88,12 +87,6 @@ for birdID, bird_data in data_by_bird.items():
             svm_train_samples_subset_Tach = svm_train_samples_subset_scaled[:,0:532] # just Tachibana features
             svm_holdout_samples_scaled = svm_scaler.transform(svm_holdout_samples)
             svm_holdout_samples_Tach = svm_holdout_samples_scaled[:,0:532]
-    
-            svm_test_samples_scaled = svm_scaler.transform(svm_test_samples)
-            svm_test_samples_Tach = svm_test_samples_scaled[:,0:532]
-
-            # get duration of samples in case I want to see acc v. that duration
-            train_sample_total_duration = sum(svm_train_samples[train_sample_IDs,DURATION_COLUMN_INDEX])
 
             ### test support vector machine with linear kernel using liblinear ###
             ### i.e., what Tachibana et al. 2014 did ###
@@ -109,6 +102,9 @@ for birdID, bird_data in data_by_bird.items():
             prob = problem(linsvm_train_labels,linsvm_train_samples)
             print(" Training linear SVM model using " + str(len(linsvm_train_samples)) + " samples.\n")
             model = train(prob,TRAIN_PARAMS)
+            print(" Testing predictions on training set: ")
+            linsvm_train_pred_labels,linsvm_train_acc,linsvm_train_vals = \
+                predict(linsvm_train_labels,linsvm_train_samples,model)
             print(" Testing predictions on holdout set: ")
             linsvm_holdout_pred_labels,linsvm_holdout_acc,linsvm_holdout_vals = \
                 predict(linsvm_holdout_labels,linsvm_holdout_samples,model)
@@ -117,10 +113,7 @@ for birdID, bird_data in data_by_bird.items():
                 predict(linsvm_test_labels,linsvm_test_samples,model)
 
             ### test support vector machine with linear kernel using liblinear ###
-            ### i.e., what Tachibana et al. 2014 did ###
-            # need to convert train samples to 'dictlist',
-            # a list of dictionaries where each dictionary represents a training sample,
-            # for liblinear library functions
+            ### without intro notes!
             linsvm_train_samples_no_intro,linsvm_train_labels_no_intro = \
                 filter_samples(svm_train_samples_subset_Tach,svm_train_labels_subset,intro_labels,remove=True)
             linsvm_train_samples_no_intro = array_to_dictlist(linsvm_train_samples_no_intro)
@@ -139,6 +132,9 @@ for birdID, bird_data in data_by_bird.items():
             prob = problem(linsvm_train_labels_no_intro,linsvm_train_samples_no_intro)
             print(" Training linear SVM model using " + str(len(linsvm_train_samples)) + " samples, intro. notes removed.")
             model = train(prob,TRAIN_PARAMS)
+            print(" Testing predictions on training set with intro. notes removed: ")
+            linsvm_train_no_intro_pred_labels,linsvm_train_no_intro_acc,linsvm_train_no_intro_vals = \
+                predict(linsvm_train_labels_no_intro,linsvm_train_samples_no_intro,model)
             print(" Testing predictions on holdout set with intro. notes removed: ")
             linsvm_holdout_no_intro_pred_labels,linsvm_holdout_no_intro_acc,linsvm_holdout_no_intro_vals = \
                 predict(linsvm_holdout_labels_no_intro,linsvm_holdout_samples_no_intro,model)
@@ -148,24 +144,25 @@ for birdID, bird_data in data_by_bird.items():
 
             ### test support vector machine with radial basis function ###
             ### using just Tachibana features ###
-            print("executing grid search for SVM with only Tachibana features")
-            best_params_Tach, best_grid_score_Tach = grid_search(svm_train_samples_subset_Tach,svm_train_labels_subset)
             print(" Training SVM w/RBF using just Tachibana features.")           
+            best_params_Tach = source_shv['best_params_Tach']
             svm_Tach_clf = SVC(C=best_params_Tach['C'],gamma=best_params_Tach['gamma'],decision_function_shape='ovr')
             svm_Tach_clf.fit(svm_train_samples_subset_Tach,svm_train_labels_subset)
+            svm_Tach_train_pred_labels = svm_Tach_clf.predict(svm_train_samples_subset_Tach)
+            svm_Tach_train_score = svm_Tach_clf.score(svm_train_samples_subset_Tach,svm_train_labels_subset)
             svm_Tach_holdout_pred_labels = svm_Tach_clf.predict(svm_holdout_samples_Tach)
             svm_Tach_holdout_score = svm_Tach_clf.score(svm_holdout_samples_Tach,svm_holdout_labels)
             svm_Tach_test_pred_labels = svm_Tach_clf.predict(svm_test_samples_Tach)
             svm_Tach_test_score = svm_Tach_clf.score(svm_test_samples_Tach,svm_test_labels)
             svm_Tach_decision_func = svm_Tach_clf.decision_function(svm_test_samples_Tach)
+            print(" svm score on train set: ",svm_Tach_train_score)
             print(" svm score on holdout set: ",svm_Tach_holdout_score)
             print(" svm score on test set: ",svm_Tach_test_score)
 
             ### test support vector machine with radial basis function ###
             ### using Tachibana features plus adjacent syllable features ###           
-            print("Executing grid search for SVM w/RBF using Tachibana features plus features of adjacent syllables.")
-            best_params, best_grid_score = grid_search(svm_train_samples_subset_scaled,svm_train_labels_subset)
-            print(" Training SVM w/RBF using just Tachibana features plus features of adjacent syllables.")    
+            print(" Training SVM w/RBF using Tachibana features plus features of adjacent syllables.")
+            best_params = source_shv['best_params']
             svm_clf = SVC(C=best_params['C'],gamma=best_params['gamma'],decision_function_shape='ovr')
             svm_clf.fit(svm_train_samples_subset_scaled,svm_train_labels_subset)
             svm_holdout_pred_labels = svm_clf.predict(svm_holdout_samples_scaled)
@@ -193,22 +190,28 @@ for birdID, bird_data in data_by_bird.items():
             print(" best k was: " + str(k))
             knn_clf = neighbors.KNeighborsClassifier(k,'distance')
             knn_clf.fit(knn_train_samples_subset,knn_train_labels_subset)    
+            knn_train_pred_labels = knn_clf.predict(knn_train_samples_subset)
+            knn_train_score = knn_clf.score(knn_train_samples_subset,knn_train_labels_subset)
             knn_holdout_pred_labels = knn_clf.predict(knn_holdout_samples_scaled)
             knn_holdout_score = knn_clf.score(knn_holdout_samples_scaled,knn_holdout_labels)
             knn_test_pred_labels = knn_clf.predict(knn_test_samples_scaled)
             knn_test_score = knn_clf.score(knn_test_samples_scaled,knn_test_labels)
+            print(" knn score on train set: ",knn_train_score)
             print(" knn score on holdout set: ",knn_holdout_score)
             print(" knn score on test set: ",knn_test_score)
 
             ### save results from this replicate ###
             results_shelve_fname = \
-                TARGET_RESULTS_DIR + RESULTS_SHELVE_BASE_FNAME + str(birdID) + ", " + str(num_songs) + ' songs, replicate ' + str(replicate + 1) + '.db'                        
+                RESULTS_DIR + RESULTS_SHELVE_BASE_FNAME + str(birdID) + ", " + str(num_songs) + ' songs, replicate ' + str(replicate) + '.db'                        
             with shelve.open(results_shelve_fname) as shlv:
                 shlv['train_sample_IDs'] = train_sample_IDs
                 shlv['holdout_sample_IDs'] = holdout_sample_IDs
                 shlv['train_sample_total_duration'] = train_sample_total_duration
                 shlv['train_sample_no_intro_total_duration'] = train_sample_no_intro_total_duration 
 
+                shlv['linsvm_train_pred_labels'] = linsvm_train_pred_labels
+                shlv['linsvm_train_acc'] = linsvm_train_acc
+                shlv['linsvm_train_vals'] = linsvm_train_vals
                 shlv['linsvm_holdout_pred_labels'] = linsvm_holdout_pred_labels
                 shlv['linsvm_holdout_acc'] = linsvm_holdout_acc
                 shlv['linsvm_holdout_vals'] = linsvm_holdout_vals
@@ -216,6 +219,9 @@ for birdID, bird_data in data_by_bird.items():
                 shlv['linsvm_test_acc'] = linsvm_test_acc
                 shlv['linsvm_test_vals'] = linsvm_test_vals
 
+                shlv['linsvm_train_no_intro_pred_labels'] = linsvm_train_no_intro_pred_labels
+                shlv['linsvm_train_no_intro_acc'] = linsvm_train_no_intro_acc
+                shlv['linsvm_train_no_intro_vals'] = linsvm_train_no_intro_vals
                 shlv['linsvm_holdout_no_intro_pred_labels'] = linsvm_holdout_no_intro_pred_labels
                 shlv['linsvm_holdout_no_intro_acc'] = linsvm_holdout_no_intro_acc
                 shlv['linsvm_holdout_no_intro_vals'] = linsvm_holdout_no_intro_vals
@@ -224,7 +230,6 @@ for birdID, bird_data in data_by_bird.items():
                 shlv['linsvm_test_no_intro_vals'] = linsvm_test_no_intro_vals
 
                 shlv['best_params'] = best_params
-                shlv['best_grid_score'] = best_grid_score
                 shlv['svm_holdout_pred_labels'] = svm_holdout_pred_labels
                 shlv['svm_holdout_score'] = svm_holdout_score
                 shlv['svm_test_pred_labels'] = svm_test_pred_labels
@@ -232,13 +237,16 @@ for birdID, bird_data in data_by_bird.items():
                 shlv['svm_decision_func'] = svm_decision_func
                 
                 shlv['best_params_Tach'] = best_params_Tach
-                shlv['best_grid_score_Tach'] = best_grid_score_Tach
+                shlv['svm_Tach_train_pred_labels'] = svm_Tach_train_pred_labels
+                shlv['svm_Tach_train_score'] = svm_Tach_train_score
                 shlv['svm_Tach_holdout_pred_labels'] = svm_Tach_holdout_pred_labels
                 shlv['svm_Tach_holdout_score'] = svm_Tach_holdout_score
                 shlv['svm_Tach_test_pred_labels'] = svm_Tach_test_pred_labels
                 shlv['svm_Tach_test_score'] = svm_Tach_test_score
                 shlv['svm_Tach_decision_func'] = svm_Tach_decision_func
 
+                shlv['knn_train_pred_labels'] = knn_train_pred_labels
+                shlv['knn_train_score'] = knn_train_score
                 shlv['knn_holdout_pred_labels'] = knn_holdout_pred_labels
                 shlv['knn_holdout_score'] = knn_holdout_score
                 shlv['knn_test_pred_labels'] = knn_test_pred_labels
