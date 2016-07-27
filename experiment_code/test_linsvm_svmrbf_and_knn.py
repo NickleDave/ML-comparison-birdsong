@@ -1,5 +1,4 @@
 #from standard library
-import pdb
 import sys
 import json
 import shelve
@@ -46,7 +45,7 @@ knn_scaler = StandardScaler()
 
 
 ### main loop
-for birdID, bird_data in data_by_bird.items():
+for birdID, bird_data in data_by_bird.items():     
     print("analyzing: " + birdID)
     
     #load train/test data, label names
@@ -60,9 +59,15 @@ for birdID, bird_data in data_by_bird.items():
     intro_labels = [ord(label) for label in intro_labels] 
 
     svm_train_samples,svm_train_labels,svm_train_song_IDs = load_from_mat(svm_train_fname)
-    svm_train_samples,svm_train_labels,svm_train_song_IDs = filter_samples(svm_train_samples,svm_train_labels,labelset,svm_train_song_IDs)
+    svm_train_samples,svm_train_labels,svm_train_song_IDs = filter_samples(svm_train_samples,
+                                                                            svm_train_labels,
+                                                                            labelset,
+                                                                            svm_train_song_IDs)
     svm_test_samples,svm_test_labels,svm_test_song_IDs = load_from_mat(svm_test_fname)
-    svm_test_samples,svm_test_labels = filter_samples(svm_test_samples,svm_test_labels,labelset,svm_test_song_IDs)[0:2] # don't need song_IDs for test set
+    svm_test_samples,svm_test_labels = filter_samples(svm_test_samples,
+                                                        svm_test_labels,
+                                                        labelset,
+                                                        svm_test_song_IDs)[0:2] # don't need song_IDs for test set
     svm_test_samples_Tach = svm_test_samples[:,0:532] # just Tachibana features
     linsvm_test_labels = svm_test_labels.tolist() # liblinear library functions take a list of labels, not an array
     
