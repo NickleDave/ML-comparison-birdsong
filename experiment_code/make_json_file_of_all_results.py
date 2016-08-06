@@ -40,7 +40,7 @@ def convert_results_dict_to_jsonifiable(dict_in):
 #constants    
 DATA_DIR = './data_for_testing/'
 JSON_FNAME = './data_for_testing/data_by_bird.JSON'
-RESULTS_DIR = './linsvm_svmrbf_knn_results_071916/'
+RESULTS_DIR = './linsvm_svmrbf_knn_results/'
 SUMMARY_SHV_BASE_FNAME = '_linsvm_svmrbf_knn_summary_results'
 
 BIRD_NAMES_DICT = {
