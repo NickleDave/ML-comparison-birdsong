@@ -189,9 +189,9 @@ for birdID, bird_data in data_by_bird.items():
             # ^ [1] because I don't want mn_scores, just k
             print(" best k was: " + str(k))
             knn_clf = neighbors.KNeighborsClassifier(k,'distance')
-            knn_clf.fit(knn_train_samples_subset,knn_train_labels_subset)    
-            knn_train_pred_labels = knn_clf.predict(knn_train_samples_subset)
-            knn_train_score = knn_clf.score(knn_train_samples_subset,knn_train_labels_subset)
+            knn_clf.fit(knn_train_samples_scaled,knn_train_labels_subset)    
+            knn_train_pred_labels = knn_clf.predict(knn_train_samples_scaled)
+            knn_train_score = knn_clf.score(knn_train_samples_scaled,knn_train_labels_subset)
             knn_holdout_pred_labels = knn_clf.predict(knn_holdout_samples_scaled)
             knn_holdout_score = knn_clf.score(knn_holdout_samples_scaled,knn_holdout_labels)
             knn_test_pred_labels = knn_clf.predict(knn_test_samples_scaled)
