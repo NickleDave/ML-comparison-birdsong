@@ -4,7 +4,7 @@ Introduction
 -------------
 
 This folder consists of Matlab and Python code used to extract features for use with machine learning algorithms as described in _"Comparison of machine learning algorithms applied to birdsong element classification"_. The code is applied to audio files produced by custom Labview software. 
-* The actual feature files created using this code are here: [feature files](https://drive.google.com/folderview?id=0B0BKW2mh0ySnY3NDcjZCM1dLS1k&usp=drive_web)
+* The actual feature files created using this code are here: [feature files](https://drive.google.com/open?id=0B0BKW2mh0ySnbzlhU29Mc3djbEU)
 * Example audio files are found here: [example day of song](https://drive.google.com/folderview?id=0B0BKW2mh0ySnYWhkYmV6WnNFQ1U&usp=sharing)
  * The code below runs on all such files in any given directory. So to test it, download the audio files and place them all in one directory.
 * As explained in the paper, the experiments sought to compare the support vector machine and k-Nearest Neighbor algorithms.
