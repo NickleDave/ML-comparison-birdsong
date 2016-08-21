@@ -49,4 +49,4 @@ Hence, using the [example audo files](https://drive.google.com/folderview?id=0B0
 ```
 
 Please see the "docstrings" in the Matlab files for an explanation of the arguments.
-The other Matlab functions in this folder do not handle feature extraction per se but they are part of our lab's established codebase for extracting song syllables from audio files of birdsong. Many of these functions were originally written by Evren Tumer.
+The other Matlab functions in this folder do not handle feature extraction per se but they are called by the feature extraction functions and required for those to work. (Most are part of our lab's established codebase for extracting song syllables from audio files of birdsong and were originally written by Evren Tumer.)
