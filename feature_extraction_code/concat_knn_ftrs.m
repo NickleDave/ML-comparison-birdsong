@@ -1,7 +1,7 @@
-function concat_ftrs
-%concat_ftrs
-%loads features from all ftr.mat files in a directory, concatenates them
-%into one cell array, saves that array 
+function concat_knn_ftrs
+%concat_knn_ftrs
+%loads features for k-Nearest Neighbors from all ftr.mat files in a directory,
+%concatenates them into one cell array, saves that array
 
 % Create batchfile with all .not.mat files
 if isunix
@@ -97,12 +97,11 @@ labels = CAT_labels;
 % get filename of first cbin
 dir = ls('*.cbin');
 a_cbin = dir(1,:);
-pat = '[a-z]{2}\d{1,3}[a-z]{2}\d{1,3}';
+pat = '[a-z]{1,2}\d{1,3}[a-z]{1,2}\d{1,3}';
 birdname = char(regexp(a_cbin,pat,'match')); % use regexp to extract birdname
 
-dir_datenum = fn2datenum(a_cbin); % if 1, fn2datenum returns just datenum corresponding mmddyyyy 00:00:00
-dir_datestr = datestr(dir_datenum,'mmddyyyy');
-now_datestr = datestr(now,'mmddyyyy');
-save_fname = [birdname '_ftr_cell_' dir_datestr '_generated_' now_datestr];
+d_num=fn2datenum(a_cbin); % get date from filename
+dstr = datestr(d_num,'mm-dd-yy');
+save_fname = [birdname '_knn_ftr_file_from_' dstr '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
 disp(['saving: ' save_fname]);
-save(save_fname,'feature_cell','labels','song_IDs')
+save(save_fname,'feature_cell','labels','song_IDs','dstr')

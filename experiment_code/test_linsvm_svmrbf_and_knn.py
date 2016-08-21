@@ -145,7 +145,7 @@ for birdID, bird_data in data_by_bird.items():
             ### test support vector machine with radial basis function ###
             ### using just Tachibana features ###
             print(" Training SVM w/RBF using just Tachibana features.")           
-            best_params_Tach = source_shv['best_params_Tach']
+            best_params_Tach, best_grid_score_Tach = grid_search(svm_train_samples_subset_Tach,svm_train_labels_subset)
             svm_Tach_clf = SVC(C=best_params_Tach['C'],gamma=best_params_Tach['gamma'],decision_function_shape='ovr')
             svm_Tach_clf.fit(svm_train_samples_subset_Tach,svm_train_labels_subset)
             svm_Tach_train_pred_labels = svm_Tach_clf.predict(svm_train_samples_subset_Tach)
@@ -162,7 +162,7 @@ for birdID, bird_data in data_by_bird.items():
             ### test support vector machine with radial basis function ###
             ### using Tachibana features plus adjacent syllable features ###           
             print(" Training SVM w/RBF using Tachibana features plus features of adjacent syllables.")
-            best_params = source_shv['best_params']
+            best_params, best_grid_score = grid_search(svm_train_samples_subset_scaled,svm_train_labels_subset)
             svm_clf = SVC(C=best_params['C'],gamma=best_params['gamma'],decision_function_shape='ovr')
             svm_clf.fit(svm_train_samples_subset_scaled,svm_train_labels_subset)
             svm_holdout_pred_labels = svm_clf.predict(svm_holdout_samples_scaled)

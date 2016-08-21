@@ -67,7 +67,7 @@ while 1
     %extract features from each spectral slice for each syllable
     for syl_id=1:length(onsets)
         raw_syl = rawsyl_cell{syl_id};
-        [amp_sm_rect,amp_rms] = compute_amps(raw_syl,Fs,duration,overlap);
+        [amp_sm_rect,amp_rms] = compute_amps(raw_syl,Fs,win_duration,overlap);
         
         syl_spect = spect_cell{syl_id};
         syl_psd = psd_cell{syl_id};

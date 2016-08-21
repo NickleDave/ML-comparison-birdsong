@@ -11,7 +11,7 @@ function make_spect_files(varargin)
 %       Spectrograms are created by the spect_from_waveform function. Hence
 %       the optional input arguments are the parameters used to create the
 %       spectrograms.
-%           Duration: time in ms. Length of each bin used to generate a
+%           win_duration: time in ms. Length of each bin used to generate a
 %           spectrum from the raw voltage waveform of the syllable
 %           Overlap: percentage. Amount time bins should overlap
 %   Example:
@@ -24,11 +24,11 @@ function make_spect_files(varargin)
 
 p = inputParser;
 % default for k is 5; must be a positive integer 
-p.addOptional('duration',32,@(x) (mod(x,1)==0) & (x>0));
+p.addOptional('win_duration',32,@(x) (mod(x,1)==0) & (x>0));
 p.addOptional('overlap',0,@(x) (x>=0 & x<=1));
 p.parse(varargin{:})
 
-duration = p.Results.duration;
+win_duration = p.Results.win_duration;
 overlap = p.Results.overlap;
 
 %TODO determine if segmenting parameters have already been decided, if not
@@ -73,9 +73,9 @@ while 1
         syl_offset = offsets(syl);
 
         %if syl is too short for spectrogram
-        if (syl_offset-syl_onset) < (duration/1000)
-            syl_offset = syl_onset + (duration/1000);    % extend end of syl
-            disp({['Syllable ' labels(syl) 'is less then ' num2str(duration)],...
+        if (syl_offset-syl_onset) < (win_duration/1000)
+            syl_offset = syl_onset + (win_duration/1000);    % extend end of syl
+            disp({['Syllable ' labels(syl) 'is less then ' num2str(win_duration)],...
                 ['Extending offset.']})
                 end
         
@@ -86,7 +86,7 @@ while 1
         
         % Compute spectrogram for whole syllable
         [spect,freqbins,timebins,psd] = ...
-            spect_from_rawsyl(raw_syl,Fs,[overlap duration]);
+            spect_from_rawsyl(raw_syl,Fs,[overlap win_duration]);
         
         %TODO save in format that is most appropriate for however I'm going
         %to do feature extraction
@@ -106,6 +106,6 @@ while 1
         'freqbins_cell',...
         'timebins_cell',...
         'psd_cell',...
-        'duration',...
+        'win_duration',...
         'overlap')
 end % of main "while 1" loop;

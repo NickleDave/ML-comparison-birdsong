@@ -18,10 +18,12 @@ dur = length(wav)/fs;
 
 % spectrogram and cepstrum -------------------
 [B,F,~] = specgram(diff(wav),nfft,fs,hanning(nfft),overlap); % with differential filter
-B2 = [B; flipud(B(2:end-1,:))];
-S = 20*log10(abs(B(2:end,:)));
-cc = real(fft(log10(abs(B2))));
-C = cc(2:nfft/2+1,:);
+S = 20*log10(abs(B(2:end,:))); % spectrum. Why multiply 20 * log10?
+
+B2 = [B; flipud(B(2:end-1,:))]; % used for cc. I guess concat w/flipud to make the right length?
+cc = real(fft(log10(abs(B2)))); % take inverse FFT (take fft again) of log of spectrum
+C = cc(2:nfft/2+1,:); % cepstrum
+
 % 5-order delta
 if length(wav)<(5*nfft-4*overlap),
     SD = zeros(spmax,1);
@@ -30,10 +32,11 @@ else
     SD = -2*S(:,1:end-4)-1*S(:,2:end-3)+1*S(:,4:end-1)+2*S(:,5:end); 
     CD = -2*C(:,1:end-4)-1*C(:,2:end-3)+1*C(:,4:end-1)+2*C(:,5:end);
 end
+
 % mean 
-mS = mean(S,2)';
-mDS = mean(abs(SD),2)';
-mC = mean(C,2)';
+mS = mean(S,2)'; % mean spectrum
+mDS = mean(abs(SD),2)'; % mean delta spectrum
+mC = mean(C,2)'; % mean cesptrum
 mDC = mean(abs(CD),2)';
 
 % make other acoustical features -------------------
@@ -50,7 +53,7 @@ mDC = mean(abs(CD),2)';
 maxq = round(fs/minf)*2;
 minq = round(fs/maxf)*2;
 [nr,nc] = size(B);
-x = repmat(F,1,nc);
+x = repmat(F,1,nc); % F = freqbins returned by specgram
 % amplitude spectrum
 s = abs(B);
 % probability

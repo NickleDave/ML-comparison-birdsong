@@ -1,3 +1,9 @@
+function make_feature_file_for_svm
+%make_feature_file_for_svm
+%
+%loops across all .not.mat files in a directory and extracts features from
+%syllables using code from Tachibana et al. 2014.
+
 !dir /B *.not.mat > batchfile
 n_files = size(ls('*.not.mat'),1); % size(ls,rows) = number of .not.mat files
 
@@ -71,5 +77,5 @@ d_num=fn2datenum(cbin_fn); % get date from filename
 dstr = datestr(d_num,'mm-dd-yy');
 underscore_ids = strfind(cbin_fn,'_');
 bird_name = cbin_fn(1:(underscore_ids(1)-1));
-save_fname = [bird_name '_feature_file_from_' dstr '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
-save(save_fname,'features_mat','label_vec','song_IDs_vec')
+save_fname = [bird_name '_svm_ftr_file_from_' dstr '_generated_' datestr(now,'mm-dd-yy_HH-MM')];
+save(save_fname,'features_mat','label_vec','song_IDs_vec','dstr')
