@@ -30,7 +30,7 @@ When the main script finishes running, it will have created databases (using the
 To re-run and reproduce my results exactly, you'll need the shelve (database) files here:
 https://drive.google.com/open?id=0B0BKW2mh0ySnMm5pLUJlWmFjeVU
 
-You will then run the script `test_linsvm_svmrbf_and_knn_rerun.py`
+You will then run the script `test_linsvm_svmrbf_and_knn_rerun.py`. As with the main script, there are directories defined as constants, so you'll need to make sure they actually exist. The `SOURCE_RESULTS_DIR` should point to wherever you download the shelve files, and the `TARGET_RESULTS_DIR` should point to wherever you want the reproduced results to be saved. 
 
 I generated figures from results with an iPython notebook, that can be found in the [figure_code directory](https://github.com/NickleDave/ML-comparison-birdsong/tree/master/figure_code) of this repository. The .ipynb in that directory loads results encoded in JSON format. This experiment_code directory also contains the script to convert from the summary file format to JSON. Again make sure the constants in the script are defined appropriately, then run from Anaconda prompt:  
 `>python make_json_file_of_all_results.py`
