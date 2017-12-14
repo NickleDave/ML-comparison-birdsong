@@ -1,4 +1,5 @@
 # Code for experiments in "Comparison of machine learning algorithms applied to birdsong element classification"
+http://conference.scipy.org/proceedings/scipy2016/david_nicholson.html
 
 ## Requirements
 * Python 3.5, Numpy, Scipy
@@ -9,7 +10,7 @@
 * Liblinear library
  * I re-compiled it to use the Python API on a 64-bit machine
 * Files of features extracted from song of four birds, used to train classifiers
-    * [can be dowloaded here](https://drive.google.com/folderview?id=0B0BKW2mh0ySnY3NDcjZCM1dLS1k&usp=drive_web)
+    * [can be dowloaded here](https://drive.google.com/open?id=0B0BKW2mh0ySnbzlhU29Mc3djbEU)
 * Obviously you'll need all the associated code  
  `>git clone https://github.com//NickleDave/ML-comparison-birdsong`
 * The main script,  "test_linsvm_svmrbf_and_knn.py", defines the following folders as constants. You'll need to create them.
